@@ -151,8 +151,8 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
 
     new_layout = [[sg.Text('Name:', size=(6, 1)),
                    sg.InputText(mech.name, enable_events=True, size=(45, 1), key="-name-"),
-                   sg.Text('', size=(5, 1)),
-                   sg.Text('Squad pts total:', size=(15, 1)),
+                   sg.Text('', size=(30, 1)),
+                   sg.Text('Squad pts total:', size=(15, 1), justification='right'),
                    sg.Text(text=pts_total, size=(3, 1), justification='center',
                            relief='sunken', key=str('-pts_total-'))
                    ],
