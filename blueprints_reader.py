@@ -49,7 +49,10 @@ def read_weapons(sheet):
         name = sheet.cell_value(i, 0).replace('\n', ' ')
         pts = int(sheet.cell_value(i, 1))
         size = sheet.cell_value(i, 2)
-        DM = int(sheet.cell_value(i, 3))
+        try:
+            DM = int(sheet.cell_value(i, 3))
+        except ValueError:
+            DM = sheet.cell_value(i, 3)
         try:
             RG = int(sheet.cell_value(i, 4))
         except ValueError:

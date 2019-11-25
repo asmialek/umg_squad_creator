@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import xlrd
 import random
 import pickle
+import re
 
 from blueprints_reader import read_support, read_weapons, read_frames
 from item_classes import Mech
@@ -20,6 +21,13 @@ def create_table_list(local_mech_list):
                    mech.special]
         temp_table_list.append(new_row)
     return temp_table_list
+
+
+def calculate_pts(local_mech_list, local_pts_total):
+    current_pts = 0
+    for mech in local_mech_list:
+        current_pts += mech.pts
+    return int(current_pts)
 
 
 if __name__ == '__main__':
@@ -45,6 +53,7 @@ if __name__ == '__main__':
     modules_dict.update(support_dict)
 
     mech_list = []
+    pts_total = 0
     pass
 
     # -------
@@ -60,7 +69,9 @@ if __name__ == '__main__':
 
     layout = [[sg.Text('Squad name:'),
                sg.Text(squad_name, justification='center', relief='raised', size=(60, 1), key='NAME'),
-               sg.Button('CHANGE', key='CHANGE')],
+               sg.Button('CHANGE', key='CHANGE'),
+               sg.Text('pts total:'),
+               sg.Text(pts_total, size=(4, 1), justification='center', relief='sunken', key='PTS')],
               [sg.Combo(frames_list, default_value='Light', enable_events=True, key="Frame")],
               [sg.Button('ADD', key="ADD", enable_events=True),
                sg.Button('REMOVE', key="RM", enable_events=True),
@@ -115,7 +126,7 @@ if __name__ == '__main__':
             if values["TABLE"]:
                 window.Hide()
                 chosen_mech = mech_list[values["TABLE"][0]]
-                open_new_window(chosen_mech, frames_dict, modules_dict)
+                open_new_window(chosen_mech, frames_dict, modules_dict, pts_total)
                 table_list = create_table_list(mech_list)
                 window.Element('TABLE').Update(values=table_list)
                 window.UnHide()
@@ -126,15 +137,20 @@ if __name__ == '__main__':
         elif event == 'SAVE':
             file_name = sg.popup_get_file('Choose squad file:', save_as=True)
             if file_name:
-                with open(file_name.rstrip('.sqd') + '.sqd', 'wb') as f:
-                    pickle.dump(mech_list, f)
+                with open(re.sub(r'\.sqd$', '', file_name) + '.sqd', 'wb') as f:
+                    pickle.dump([squad_name, mech_list], f)
         elif event == 'LOAD':
             file_name = sg.popup_get_file('Choose squad file:')
             if file_name:
                 with open(file_name, 'rb') as f:
-                    mech_list = pickle.load(f)
+                    loaded_vals = pickle.load(f)
+                    squad_name = loaded_vals[0]
+                    mech_list = loaded_vals[1]
                 table_list = create_table_list(mech_list)
                 window.Element('TABLE').Update(values=table_list)
+                window.Element('NAME').Update(value=squad_name)
+        pts_total = calculate_pts(mech_list, pts_total)
+        window.Element('PTS').Update(value=pts_total)
         # except:
         #     pass
 

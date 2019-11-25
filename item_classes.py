@@ -54,14 +54,26 @@ class Mech:
         self.slots = self.frame.slots
 
     def update_frame(self, frame):
-        self.pts -= self.frame.pts
-        self.MV -= self.frame.MV
-        self.AM -= self.frame.AM
-        self.EG -= self.frame.EG
+        # self.pts -= self.frame.pts
+        # self.MV -= self.frame.MV
+        # self.AM -= self.frame.AM
+        # self.EG -= self.frame.EG
         self.frame = frame
-        self.pts += self.frame.pts
-        self.MV += self.frame.MV
-        self.AM += self.frame.AM
-        self.EG += self.frame.EG
+        # self.pts += self.frame.pts
+        # self.MV += self.frame.MV
+        # self.AM += self.frame.AM
+        # self.EG += self.frame.EG
+        self.pts = self.frame.pts
+        self.MV = self.frame.MV
+        self.AM = self.frame.AM
+        self.EG = self.frame.EG
         self.special = self.frame.special
         self.slots = self.frame.slots
+
+    def update_slot(self, slot_name, new_module):
+        if self.slots[slot_name]:
+            self.pts -= self.slots[slot_name].pts
+        self.slots[slot_name] = new_module
+        if new_module:
+            self.pts += self.slots[slot_name].pts
+        self.pts = int(self.pts)
