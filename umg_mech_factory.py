@@ -31,7 +31,7 @@ def calculate_pts(local_mech_list, local_pts_total):
 
 
 if __name__ == '__main__':
-    loc = "/home/asmialek/Projects/Untitled Mech Game/umg_spreadsheets.xlsx"
+    loc = "umg_spreadsheets.xlsx"
 
     random_mech_names = []
     with open('random_mech_names.txt') as f:
@@ -63,21 +63,23 @@ if __name__ == '__main__':
     headings = ['name', 'frame', 'pts', 'MV', 'AM', 'EC', 'special']
     table_list = []
 
-    # sg.change_look_and_feel('Dark2')
+    sg.change_look_and_feel('Default1')
 
     squad_name = 'Alpha Squad'
 
     layout = [[sg.Text('Squad name:'),
-               sg.Text(squad_name, justification='center', relief='raised', size=(60, 1), key='NAME'),
-               sg.Button('CHANGE', key='CHANGE'),
-               sg.Text('pts total:'),
+               sg.Text(squad_name, justification='center', relief='sunken', size=(60, 1), key='NAME'),
+               sg.Button('CHANGE', key='CHANGE', enable_events=True),
+               sg.Text(''),
+               sg.Text('Squad pts total:'),
                sg.Text(pts_total, size=(4, 1), justification='center', relief='sunken', key='PTS')],
-              [sg.Combo(frames_list, default_value='Light', enable_events=True, key="Frame")],
-              [sg.Button('ADD', key="ADD", enable_events=True),
+              [sg.Text('New frame:'),
+               sg.Combo(frames_list, default_value='Light', enable_events=True, key="Frame"),
+               sg.Button('ADD', key="ADD", enable_events=True, focus=True),
                sg.Button('REMOVE', key="RM", enable_events=True),
                sg.Button('EDIT', key="EDIT", enable_events=True),
-               sg.Button('SAVE', key="SAVE", enable_events=True),
-               sg.Button('LOAD', key="LOAD", enable_events=True),
+               sg.Button('SAVE SQUAD', key="SAVE", enable_events=True),
+               sg.Button('LOAD SQUAD', key="LOAD", enable_events=True),
                ],
               [sg.Table(values=table_list,
                         headings=headings, max_col_width=25, background_color='lightblue',

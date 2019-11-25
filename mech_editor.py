@@ -176,7 +176,7 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
                                 disabled=True, key='-pts-')
                    ],
                   [sg.Text('Special', size=(6, 1)),
-                   sg.Text(text=mech.special, size=(93, 1), background_color='#d7d7d7',
+                   sg.Text(text=mech.special, size=(107, 1), background_color='#d7d7d7',
                            relief='sunken' , key='-special-')
                    ],
                   [sg.Text('')],
@@ -188,7 +188,7 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
                    sg.Button('FINISH', key="-fin-", enable_events=True)]
                   ]
 
-    sub_window = sg.Window('Sub Window', new_layout, resizable=True)
+    sub_window = sg.Window('Mech Factory', new_layout, resizable=True)
     pts_total = pts_total-mech.pts
 
     slot_events = ['slot_list_' + str(i) for i in range(1, 7)]
