@@ -51,7 +51,7 @@ class Mech:
         self.AM = self.frame.AM
         self.EG = self.frame.EG
         self.special = self.frame.special
-        self.slots = self.frame.slots
+        self.slots = self.frame.slots.copy()
 
     def update_frame(self, frame):
         # self.pts -= self.frame.pts
@@ -68,7 +68,7 @@ class Mech:
         self.AM = self.frame.AM
         self.EG = self.frame.EG
         self.special = self.frame.special
-        self.slots = self.frame.slots
+        self.slots = self.frame.slots.copy()
 
     def update_slot(self, slot_name, new_module):
         if self.slots[slot_name]:
