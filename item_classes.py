@@ -45,6 +45,7 @@ class Module:
 class Mech:
     def __init__(self, frame, name):
         self.frame = frame
+        self.frame_name = frame.name
         self.name = name
         self.pts = self.frame.pts
         self.MV = self.frame.MV
@@ -69,6 +70,7 @@ class Mech:
         self.EG = self.frame.EG
         self.special = self.frame.special
         self.slots = self.frame.slots.copy()
+        self.frame_name = frame.name
 
     def update_slot(self, slot_name, new_module):
         if self.slots[slot_name]:

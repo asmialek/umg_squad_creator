@@ -59,6 +59,8 @@ def read_weapons(sheet):
             RG = sheet.cell_value(i, 4)
         if sheet.cell_value(i, 5) == '-':
             EC = '-'
+        elif sheet.cell_value(i, 5) == 'X':
+            EC = 'X'
         else:
             EC = int(sheet.cell_value(i, 5))
         special = sheet.cell_value(i, 6)
@@ -77,8 +79,10 @@ def read_support(active_sheet, passive_sheet):
         size = sheet.cell_value(i, 2)
         if sheet.cell_value(i, 3) == '-':
             EC = '-'
+        elif sheet.cell_value(i, 3) == 'X':
+            EC = 'X'
         else:
-            EC = sheet.cell_value(i, 3)
+            EC = int(sheet.cell_value(i, 3))
             # EC = int(sheet.cell_value(i, 3))
         special = sheet.cell_value(i, 4)
         module_type = "Support Active"

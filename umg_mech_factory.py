@@ -23,7 +23,7 @@ def create_table_list(local_mech_list):
     return temp_table_list
 
 
-def calculate_pts(local_mech_list, local_pts_total):
+def calculate_pts(local_mech_list):
     current_pts = 0
     for mech in local_mech_list:
         current_pts += mech.pts
@@ -80,6 +80,7 @@ if __name__ == '__main__':
                sg.Button('EDIT', key="EDIT", enable_events=True),
                sg.Button('SAVE SQUAD', key="SAVE", enable_events=True),
                sg.Button('LOAD SQUAD', key="LOAD", enable_events=True),
+               sg.Button('NEW SQUAD', key="NEW", enable_events=True),
                ],
               [sg.Table(values=table_list,
                         headings=headings, max_col_width=25, background_color='lightblue',
@@ -95,6 +96,10 @@ if __name__ == '__main__':
                         tooltip='This is a table',
                         # enable_events=True,
                         )],
+              [sg.Text(' ', size=(70, 1)),
+               sg.Button('GENERATE', key="-gen-", enable_events=True),
+               sg.Text(' ', size=(2, 1)),
+               sg.Button('FINISH', key="-fin-", enable_events=True)]
               ]
 
     window = sg.Window('Squad Rooster', layout, resizable=True)
@@ -139,7 +144,8 @@ if __name__ == '__main__':
         elif event == 'SAVE':
             def_path = squad_name.lower().replace(' ', '_')
             # def_path = "".join(x for x in def_path if x.isalnum())
-            file_name = sg.popup_get_file('Choose squad file:', save_as=True, default_path=def_path, default_extension='.sqd')
+            file_name = sg.popup_get_file('Choose squad file:', save_as=True,
+                                          default_path=def_path, default_extension='.sqd')
             if file_name:
                 with open(re.sub(r'\.sqd$', '', file_name) + '.sqd', 'wb') as f:
                     pickle.dump([squad_name, mech_list], f)
@@ -153,7 +159,15 @@ if __name__ == '__main__':
                 table_list = create_table_list(mech_list)
                 window.Element('TABLE').Update(values=table_list)
                 window.Element('NAME').Update(value=squad_name)
-        pts_total = calculate_pts(mech_list, pts_total)
+        elif event == 'NEW':
+            table_list = []
+            mech_list = []
+            squad_name = "Alpha Squad"
+            window.Element('TABLE').Update(values=table_list)
+            window.Element('NAME').Update(value=squad_name)
+        if event == "FIN":
+            break
+        pts_total = calculate_pts(mech_list)
         window.Element('PTS').Update(value=pts_total)
         # except:
         #     pass

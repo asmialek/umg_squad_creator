@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 import random
+from excel_writer import write_to_excel
 
 
 def update_values(mech, window):
@@ -184,7 +185,9 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
                    sg.Column(slots_elements_left),
                    sg.Column(slots_elements_right),
                    ],
-                  [sg.Text(' ', size=(90, 1)),
+                  [sg.Text(' ', size=(70, 1)),
+                   sg.Button('GENERATE', key="-gen-", enable_events=True),
+                   sg.Text(' ', size=(2, 1)),
                    sg.Button('FINISH', key="-fin-", enable_events=True)]
                   ]
 
@@ -207,6 +210,8 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
             # sub_window.Element('-test-').Update(mech.frame.name)
             update_slots(mech, modules_dict, sub_window)
             update_slots_values(mech, modules_dict, sub_window)
+        elif event == '-gen-':
+            write_to_excel(mech)
         elif event in slot_events:
             # print('>>>', modules_dict[values[event]])
             keys_list = list(mech.slots.keys())
