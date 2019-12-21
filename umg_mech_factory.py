@@ -7,6 +7,7 @@ import re
 from blueprints_reader import read_support, read_weapons, read_frames
 from item_classes import Mech
 from mech_editor import open_new_window
+from excel_writer import write_list_to_excel
 
 
 def create_table_list(local_mech_list):
@@ -75,6 +76,7 @@ if __name__ == '__main__':
                sg.Text(pts_total, size=(4, 1), justification='center', relief='sunken', key='PTS')],
               [sg.Text('New frame:'),
                sg.Combo(frames_list, default_value='Light', enable_events=True, key="Frame"),
+               sg.Text('  '),
                sg.Button('ADD', key="ADD", enable_events=True, focus=True),
                sg.Button('REMOVE', key="RM", enable_events=True),
                sg.Button('EDIT', key="EDIT", enable_events=True),
@@ -96,10 +98,9 @@ if __name__ == '__main__':
                         tooltip='This is a table',
                         # enable_events=True,
                         )],
-              [sg.Text(' ', size=(70, 1)),
-               sg.Button('GENERATE', key="-gen-", enable_events=True),
-               sg.Text(' ', size=(2, 1)),
-               sg.Button('FINISH', key="-fin-", enable_events=True)]
+              [sg.Text(' ', size=(68, 1)),
+               sg.Button('GENERATE SQUAD ROOSTER', key="GEN", enable_events=True),
+               sg.Button('EXIT', key="FIN", enable_events=True)]
               ]
 
     window = sg.Window('Squad Rooster', layout, resizable=True)
@@ -165,8 +166,10 @@ if __name__ == '__main__':
             squad_name = "Alpha Squad"
             window.Element('TABLE').Update(values=table_list)
             window.Element('NAME').Update(value=squad_name)
-        if event == "FIN":
+        elif event == "FIN":
             break
+        elif event == 'GEN':
+            write_list_to_excel(mech_list)
         pts_total = calculate_pts(mech_list)
         window.Element('PTS').Update(value=pts_total)
         # except:
