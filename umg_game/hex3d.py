@@ -97,7 +97,7 @@ class HexTile(pg.sprite.Sprite):
         self.rect.bottomleft = point[0] - offset[0], point[1] + offset[1]
         if self.chosen:
             self.image = copy.copy(self.image)
-            pg.draw.rect(self.image, (250,0,0), (0, 0, 100, 100))
+            pg.draw.rect(self.image, (250,0,0), (15, 0, 30, 30))
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -106,11 +106,11 @@ class HexTile(pg.sprite.Sprite):
         x, y = mouse
         x = x - self.rect.topleft[0]
         y = y - self.rect.topleft[1]
-        # print(x,y)
         if self.rect.collidepoint(mouse):
             if self.mask.get_at((x, y)):
                 print("click", self.index)
-                self.chosen = True
+                return True
+        return False
 
 class HexMap(object):
     def __init__(self, size, center):
@@ -127,6 +127,7 @@ class HexMap(object):
         self.recenter(center)
         self.change = True
         self.angle_delta = 60
+        self.clicked_list = []
 
     def make_map(self):
         tiles = pg.sprite.Group()
@@ -180,6 +181,7 @@ class HexMap(object):
     
     def draw(self, surface):
         for tile in self.draw_order:
+            # print(self.draw_order)
             tile.draw(surface)
 
     def update(self):
@@ -224,9 +226,19 @@ class HexMap(object):
                 self.zoom(1)
             elif event.button == 5:
                 self.zoom(-1)
-            elif event.button in [1, 2]:
+            elif event.button == 1 and not pg.key.get_mods() & pg.KMOD_LSHIFT:
+                self.clicked_list = []
                 for hex in self.tiles.sprites():
-                    hex.check_click(event.pos)
+                    hex.chosen = False
+                    if hex.check_click(event.pos):
+                        self.clicked_list.append(hex.index)
+                        print(self.clicked_list)
+                for hex in reversed(self.draw_order):
+                    if hex.index in self.clicked_list:
+                        print('highest', hex.index)
+                        hex.chosen = True
+                        break
+                self.change = True
             
 
 class App(object):
@@ -235,7 +247,7 @@ class App(object):
         self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
         self.done = False
-        self.hexmap = HexMap((10,10), (self.screen_rect.center[0], self.screen_rect.center[1]+80))
+        self.hexmap = HexMap((20,20), (self.screen_rect.center[0], self.screen_rect.center[1]+80))
         
     def update(self):
         self.hexmap.update()
