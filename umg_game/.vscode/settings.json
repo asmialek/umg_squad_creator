@@ -1,0 +1,13 @@
+{
+    "python.linting.mypyArgs": [
+        "--ignore-missing-imports",
+        "--follow-imports=silent",
+        "--show-column-numbers",
+        "--extension-pkg-whitelist=pygame",
+        "--unsafe-load-any-extension=pygame",
+        "--generate-members"
+    ],
+    "python.autoComplete.extraPaths": [
+    
+    ]
+}
