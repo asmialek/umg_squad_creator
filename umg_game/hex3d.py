@@ -88,6 +88,7 @@ class HexTile(pg.sprite.Sprite):
         self.rect = None
         self.biome = biome
         self.chosen = False
+        self.mech_sprite = pg.image.load(r'mech2.png') 
 
     def update(self, tiles, offset, point_array):
         self.image = tiles[self.biome]
@@ -95,12 +96,16 @@ class HexTile(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         point = point_array[0][self.index]
         self.rect.bottomleft = point[0] - offset[0], point[1] + offset[1]
-        if self.chosen:
-            self.image = copy.copy(self.image)
-            pg.draw.rect(self.image, (250,0,0), (15, 0, 30, 30))
+        # if self.chosen:
+            # self.image = copy.copy(self.image)
+            # pg.draw.rect(self.image, (250,0,0), (15, 0, 30, 30))
+            
 
-    def draw(self, surface):
+    def draw(self, surface, squash_ratio, scale):
         surface.blit(self.image, self.rect)
+        if self.chosen:
+            mech_sprite = pg.transform.scale(self.mech_sprite, (4*scale, 4*scale))
+            surface.blit(mech_sprite, (self.rect[0], self.rect[1]-80+squash_ratio*50))
 
     def check_click(self, mouse):
         x, y = mouse
@@ -170,7 +175,7 @@ class HexMap(object):
         self.change = True
 
     def zoom(self, ammount):
-        self.scale = max(3, min(20, self.scale + ammount))
+        self.scale = max(3, min(40, self.scale + ammount))
         self.change = True
 
     def transform(self, rot):
@@ -182,7 +187,7 @@ class HexMap(object):
     def draw(self, surface):
         for tile in self.draw_order:
             # print(self.draw_order)
-            tile.draw(surface)
+            tile.draw(surface, self.squash_ratio, self.scale)
 
     def update(self):
         rel = pg.mouse.get_rel()
