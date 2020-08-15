@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 import random
-from excel_writer import write_to_excel
+from umg_factory.excel_writer import write_to_excel
 
 
 def update_values(mech, window):

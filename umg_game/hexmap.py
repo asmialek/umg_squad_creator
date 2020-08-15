@@ -7,8 +7,9 @@ SQRT3 = math.sqrt(3)
 
 
 class Token(object):
-    def __init__(self, hex, name='None'):
+    def __init__(self, screen, hex, name='None'):
         self.name = name
+        self.screen = screen
         self.hex = hex
         self.hex.token = self
         self.x = self.hex.x
@@ -20,7 +21,7 @@ class Token(object):
 
     def update(self):
         pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
-        screen.blit(self.surf, (self.x, self.y))
+        self.screen.blit(self.surf, (self.x, self.y))
 
     def move(self, hex):
         if hex.token:
@@ -33,13 +34,15 @@ class Token(object):
 
 
 class HexMap(object):
-    def __init__(self):
+    def __init__(self, screen):
+        self.screen = screen
+    
         self.chosen_hex = None
                 
         self.size = 31
 
         self.hexmap = []
-
+    
         self.radius = 7
         self.real_center = 200
         self.center = self.real_center-self.size/2
@@ -53,7 +56,7 @@ class HexMap(object):
                 rq_offset = q*SQRT3*self.size/4
                 q_offset = q*(3*self.size/4+2)
                 if q+r in range(-self.radius+1, self.radius):
-                    self.hexmap.append(Hex(self.center+q_offset, self.center+r_offset+rq_offset, self.size, (q, r)))
+                    self.hexmap.append(Hex(self.screen, self.center+q_offset, self.center+r_offset+rq_offset, self.size, (q, r)))
                     self.tiles[q+self.radius-1][r+self.radius-1] = self.hexmap[-1]
 
     def update(self):
@@ -92,9 +95,10 @@ class HexMap(object):
 
 
 class Hex(object):
-    def __init__(self, x, y, size, id):
+    def __init__(self, screen, x, y, size, id):
         self.x = int(x)
         self.y = int(y)
+        self.screen = screen
         self.size = size
         self.surf = pygame.Surface((size, size), pygame.SRCALPHA)
         self.id = id
@@ -115,76 +119,77 @@ class Hex(object):
             pygame.draw.polygon(self.surf, color, self.points)
         else:
             pygame.draw.polygon(self.surf, (204,204,14), self.points)
-        screen.blit(self.surf, (self.x+x_offset, self.y+y_offset))
+        self.screen.blit(self.surf, (self.x+x_offset, self.y+y_offset))
         if self.token:
             self.token.update()
-        
 
-pygame.init()
-pygame.font.init()
-clock = pygame.time.Clock()
-myfont = pygame.font.SysFont('Comic Sans MS', 14)
 
-width=600
-height=400
-screen = pygame.display.set_mode((width, height ))
+def run():
+    pygame.init()
+    pygame.font.init()
+    clock = pygame.time.Clock()
+    myfont = pygame.font.SysFont('Comic Sans MS', 14)
 
-hexmap_object = HexMap()
+    width=600
+    height=400
+    screen = pygame.display.set_mode((width, height ))
 
-Token(hexmap_object.tiles[6][6], 'Adam')
-Token(hexmap_object.tiles[6][8], 'Kuba')
+    hexmap_object = HexMap(screen)
 
-pygame.display.flip() # paint screen one time
-           
-running = True
-hover_text = ''
+    Token(screen, hexmap_object.tiles[6][6], 'Adam')
+    Token(screen, hexmap_object.tiles[6][8], 'Kuba')
 
-while (running):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEMOTION:
-            x, y = event.pos
-            hexmap_object.hover = hexmap_object.check_position(x, y)
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            hex_object = hexmap_object.check_position(x, y)
-            if hex_object:
-                if hex_object.choice:
-                    hex_object.choice = False
-                    hexmap_object.chosen_hex = None
-                else:
-                    token = None
-                    if hexmap_object.chosen_hex:
-                        token = hexmap_object.chosen_hex.token
-                        hexmap_object.chosen_hex.choice = False
-                    hex_object.choice = True
-                    hexmap_object.chosen_hex = hex_object
-                    print(token)
-                    print(hex_object.token)
-                    if token:
-                        token.move(hex_object)
+    pygame.display.flip() # paint screen one time
+            
+    running = True
+    hover_text = ''
+
+    while (running):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                hexmap_object.hover = hexmap_object.check_position(x, y)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                hex_object = hexmap_object.check_position(x, y)
+                if hex_object:
+                    if hex_object.choice:
                         hex_object.choice = False
                         hexmap_object.chosen_hex = None
-            hexmap_object.hover = hexmap_object.check_position(x, y)
+                    else:
+                        token = None
+                        if hexmap_object.chosen_hex:
+                            token = hexmap_object.chosen_hex.token
+                            hexmap_object.chosen_hex.choice = False
+                        hex_object.choice = True
+                        hexmap_object.chosen_hex = hex_object
+                        print(token)
+                        print(hex_object.token)
+                        if token:
+                            token.move(hex_object)
+                            hex_object.choice = False
+                            hexmap_object.chosen_hex = None
+                hexmap_object.hover = hexmap_object.check_position(x, y)
 
-    if hexmap_object.hover:
-        if hexmap_object.hover.token:
-            hover_text = hexmap_object.hover.token.name
-    elif hexmap_object.chosen_hex:
-        if hexmap_object.chosen_hex.token:
-            print(hexmap_object.chosen_hex.token.name)
-            hover_text = hexmap_object.chosen_hex.token.name
-    else:
-        hover_text = ''
-                        
+        if hexmap_object.hover:
+            if hexmap_object.hover.token:
+                hover_text = hexmap_object.hover.token.name
+        elif hexmap_object.chosen_hex:
+            if hexmap_object.chosen_hex.token:
+                print(hexmap_object.chosen_hex.token.name)
+                hover_text = hexmap_object.chosen_hex.token.name
+        else:
+            hover_text = ''
+                            
 
-    screen.fill(pygame.Color("black"))
-    textsurface = myfont.render(hover_text, False, (200, 0, 0))
-    screen.blit(textsurface,(400,20))
-    hexmap_object.update()
-    pygame.display.update()
-    pygame.display.flip()
-    clock.tick(60)
+        screen.fill(pygame.Color("black"))
+        textsurface = myfont.render(hover_text, False, (200, 0, 0))
+        screen.blit(textsurface,(400,20))
+        hexmap_object.update()
+        pygame.display.update()
+        pygame.display.flip()
+        clock.tick(60)
 
-pygame.quit()
+    pygame.quit()

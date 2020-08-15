@@ -1,8 +1,12 @@
+import sys
+import pathlib
+sys.path.insert(0, pathlib.Path.cwd() / '..' / 'umg_shared')
+
 import xlrd
 import string
 from collections import OrderedDict
 
-from item_classes import Frame, Module
+from umg_shared.item_classes import Frame, Module
 
 
 def read_slots(sheet, i):

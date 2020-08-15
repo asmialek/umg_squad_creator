@@ -56,15 +56,7 @@ class Mech:
         self.image = 'mech.jpg'
 
     def update_frame(self, frame):
-        # self.pts -= self.frame.pts
-        # self.MV -= self.frame.MV
-        # self.AM -= self.frame.AM
-        # self.EG -= self.frame.EG
         self.frame = frame
-        # self.pts += self.frame.pts
-        # self.MV += self.frame.MV
-        # self.AM += self.frame.AM
-        # self.EG += self.frame.EG
         self.pts = self.frame.pts
         self.MV = self.frame.MV
         self.AM = self.frame.AM

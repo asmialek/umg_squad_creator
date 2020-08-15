@@ -1,13 +1,18 @@
+import sys
+import pathlib
+# sys.path.insert(0, pathlib.Path.cwd() / '..' / 'umg_shared')
+
 import PySimpleGUI as sg
 import xlrd
 import random
 import pickle
 import re
 
-from blueprints_reader import read_support, read_weapons, read_frames
-from item_classes import Mech
-from mech_editor import open_new_window
-from excel_writer import write_list_to_excel
+
+from umg_shared.item_classes import Mech
+from umg_factory.blueprints_reader import read_support, read_weapons, read_frames
+from umg_factory.mech_editor import open_new_window
+from umg_factory.excel_writer import write_list_to_excel
 
 
 def create_table_list(local_mech_list):
@@ -31,11 +36,11 @@ def calculate_pts(local_mech_list):
     return int(current_pts)
 
 
-if __name__ == '__main__':
-    loc = "umg_spreadsheets.xlsx"
+def run():
+    loc = "umg_factory/umg_spreadsheets.xlsx"
 
     random_mech_names = []
-    with open('random_mech_names.txt') as f:
+    with open('umg_factory/random_mech_names.txt') as f:
         for line in f.readlines():
             random_mech_names.append(line)
     random_mech_names = list(dict.fromkeys(random_mech_names))
