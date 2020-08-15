@@ -81,15 +81,14 @@ class HexMap(object):
         print(hexes)
         for item in hexes:
             try:
-                hex_object = self.tiles[item[0]+self.radius-1][item[1]+self.radius-1]
-                if hex_object:
-                    if hex_object.surf.get_rect(topleft=(hex_object.x+self.x_offset, hex_object.y+self.y_offset)).collidepoint(x,y):
-                    # print("maks:", hex_object.mask.get_at((x-hex_object.x, y-hex_object.y)))
-                        if hex_object.mask.get_at((x-hex_object.x-self.x_offset, y-hex_object.y-self.y_offset)):
-                            print('clicked on mask', hex_object.id)
-                            return hex_object
-            except IndexError as e:
-                # print(e)
+                clicked_hex = self.tiles[item[0]+self.radius-1][item[1]+self.radius-1]
+                if clicked_hex:
+                    if clicked_hex.surf.get_rect(topleft=(clicked_hex.x+self.x_offset, clicked_hex.y+self.y_offset)).collidepoint(x,y):
+
+                        if clicked_hex.mask.get_at((x-clicked_hex.x-self.x_offset, y-clicked_hex.y-self.y_offset)):
+                            print('clicked on mask', clicked_hex.id)
+                            return clicked_hex
+            except IndexError:
                 pass
         return None
 
@@ -112,7 +111,7 @@ class Hex(object):
         pygame.draw.polygon(self.surf, (204,204,14), self.points)
         self.mask = pygame.mask.from_surface(self.surf)
 
-        self.choice = False
+        # self.choice = False
 
     def update(self, color=None, x_offset=0, y_offset=0):
         if color:
@@ -144,35 +143,34 @@ def run():
     running = True
     hover_text = ''
 
+    # Main loop
     while (running):
         for event in pygame.event.get():
+            # Quit the game if event is "quit"
             if event.type == pygame.QUIT:
                 running = False
+            # Mouse hover highlight
             if event.type == pygame.MOUSEMOTION:
                 x, y = event.pos
                 hexmap_object.hover = hexmap_object.check_position(x, y)
+            # Mouse click
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                hex_object = hexmap_object.check_position(x, y)
-                if hex_object:
-                    if hex_object.choice:
-                        hex_object.choice = False
+                clicked_hex = hexmap_object.check_position(x, y)
+                if clicked_hex:
+                    # If clicked hex is already chosen, unclick it
+                    if clicked_hex == hexmap_object.chosen_hex:
                         hexmap_object.chosen_hex = None
+                    # If holding token, put it on an empty place
+                    elif not clicked_hex.token and hexmap_object.chosen_hex:
+                        hexmap_object.chosen_hex.token.move(clicked_hex)
+                        hexmap_object.chosen_hex = None
+                    # If clicking on space with token, grab it
                     else:
-                        token = None
-                        if hexmap_object.chosen_hex:
-                            token = hexmap_object.chosen_hex.token
-                            hexmap_object.chosen_hex.choice = False
-                        hex_object.choice = True
-                        hexmap_object.chosen_hex = hex_object
-                        print(token)
-                        print(hex_object.token)
-                        if token:
-                            token.move(hex_object)
-                            hex_object.choice = False
-                            hexmap_object.chosen_hex = None
-                hexmap_object.hover = hexmap_object.check_position(x, y)
+                        hexmap_object.chosen_hex = clicked_hex
+                hexmap_object.hover = clicked_hex
 
+        # Print text on side
         if hexmap_object.hover:
             if hexmap_object.hover.token:
                 hover_text = hexmap_object.hover.token.name
@@ -183,7 +181,7 @@ def run():
         else:
             hover_text = ''
                             
-
+        # Update screen
         screen.fill(pygame.Color("black"))
         textsurface = myfont.render(hover_text, False, (200, 0, 0))
         screen.blit(textsurface,(400,20))
@@ -193,3 +191,7 @@ def run():
         clock.tick(60)
 
     pygame.quit()
+
+
+if __name__ == '__main__':
+    run()
