@@ -53,7 +53,7 @@ class Mech:
         self.EG = self.frame.EG
         self.special = self.frame.special
         self.slots = self.frame.slots.copy()
-        self.image = 'justin-spice-beta-mech-thumbs.jpg'
+        self.image = 'mech.jpg'
 
     def update_frame(self, frame):
         # self.pts -= self.frame.pts
