@@ -1,13 +1,8 @@
-import sys
-import pathlib
-# sys.path.insert(0, pathlib.Path.cwd() / '..' / 'umg_shared')
-
-import PySimpleGUI as sg
-import xlrd
 import random
 import pickle
 import re
-
+import xlrd
+import PySimpleGUI as sg
 
 from umg_shared.item_classes import Mech
 from umg_factory.blueprints_reader import read_support, read_weapons, read_frames
@@ -37,10 +32,10 @@ def calculate_pts(local_mech_list):
 
 
 def run():
-    loc = "umg_factory/umg_spreadsheets.xlsx"
+    loc = "umg_factory/resources/umg_spreadsheets.xlsx"
 
     random_mech_names = []
-    with open('umg_factory/random_mech_names.txt') as f:
+    with open('umg_factory/resources/random_mech_names.txt') as f:
         for line in f.readlines():
             random_mech_names.append(line)
     random_mech_names = list(dict.fromkeys(random_mech_names))
@@ -60,7 +55,6 @@ def run():
 
     mech_list = []
     pts_total = 0
-    pass
 
     # -------
     #   GUI
@@ -113,7 +107,7 @@ def run():
     while True:             # Event Loop
         event, values = window.Read()
         print("event: ", event)
-        print("values: ",  values)
+        print("values: ", values)
         if event is None:
             break
 

@@ -1,5 +1,5 @@
-import pygame
 import math
+import pygame
 
 
 hex_ids = 0
@@ -7,13 +7,13 @@ SQRT3 = math.sqrt(3)
 
 
 class Token(object):
-    def __init__(self, screen, hex, name='None'):
+    def __init__(self, screen, hex_cell, name='None'):
         self.name = name
         self.screen = screen
-        self.hex = hex
-        self.hex.token = self
-        self.x = self.hex.x
-        self.y = self.hex.y
+        self.hex_cell = hex_cell
+        self.hex_cell.token = self
+        self.x = self.hex_cell.x
+        self.y = self.hex_cell.y
         self.shape = (10,10,20,20)
         self.surf = pygame.Surface((40, 40), pygame.SRCALPHA)
         pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
@@ -23,14 +23,14 @@ class Token(object):
         pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
         self.screen.blit(self.surf, (self.x, self.y))
 
-    def move(self, hex):
-        if hex.token:
+    def move(self, hex_cell):
+        if hex_cell.token:
             return
-        self.hex.token = None
-        self.hex = hex
-        self.hex.token = self
-        self.x = self.hex.x
-        self.y = self.hex.y
+        self.hex_cell.token = None
+        self.hex_cell = hex_cell
+        self.hex_cell.token = self
+        self.x = self.hex_cell.x
+        self.y = self.hex_cell.y
 
 
 class HexMap(object):
@@ -38,6 +38,7 @@ class HexMap(object):
         self.screen = screen
     
         self.chosen_hex = None
+        self.hover = None
                 
         self.size = 31
 
@@ -60,8 +61,8 @@ class HexMap(object):
                     self.tiles[q+self.radius-1][r+self.radius-1] = self.hexmap[-1]
 
     def update(self):
-        for hex in self.hexmap:
-            hex.update(x_offset=self.x_offset, y_offset=self.y_offset)
+        for hex_cell in self.hexmap:
+            hex_cell.update(x_offset=self.x_offset, y_offset=self.y_offset)
         if self.chosen_hex:
             self.chosen_hex.update((204,14,204),x_offset=self.x_offset, y_offset=self.y_offset)
         if self.hover:
@@ -86,7 +87,7 @@ class HexMap(object):
                     if clicked_hex.surf.get_rect(topleft=(clicked_hex.x+self.x_offset, clicked_hex.y+self.y_offset)).collidepoint(x,y):
 
                         if clicked_hex.mask.get_at((x-clicked_hex.x-self.x_offset, y-clicked_hex.y-self.y_offset)):
-                            print('clicked on mask', clicked_hex.id)
+                            print('clicked on mask', clicked_hex.hex_id)
                             return clicked_hex
             except IndexError:
                 pass
@@ -94,13 +95,13 @@ class HexMap(object):
 
 
 class Hex(object):
-    def __init__(self, screen, x, y, size, id):
+    def __init__(self, screen, x, y, size, hex_id):
         self.x = int(x)
         self.y = int(y)
         self.screen = screen
         self.size = size
         self.surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        self.id = id
+        self.hex_id = hex_id
         self.token = None
         a = self.size/2
         side = int(math.floor(a))
@@ -110,8 +111,6 @@ class Hex(object):
         print(self.points)
         pygame.draw.polygon(self.surf, (204,204,14), self.points)
         self.mask = pygame.mask.from_surface(self.surf)
-
-        # self.choice = False
 
     def update(self, color=None, x_offset=0, y_offset=0):
         if color:
@@ -144,7 +143,7 @@ def run():
     hover_text = ''
 
     # Main loop
-    while (running):
+    while running:
         for event in pygame.event.get():
             # Quit the game if event is "quit"
             if event.type == pygame.QUIT:
@@ -158,7 +157,7 @@ def run():
                 x, y = event.pos
                 clicked_hex = hexmap_object.check_position(x, y)
                 if clicked_hex:
-                    # If clicked hex is already chosen, unclick it
+                    # If clicked hex_cell is already chosen, unclick it
                     if clicked_hex == hexmap_object.chosen_hex:
                         hexmap_object.chosen_hex = None
                     # If holding token, put it on an empty place
@@ -180,11 +179,11 @@ def run():
                 hover_text = hexmap_object.chosen_hex.token.name
         else:
             hover_text = ''
-                            
+
         # Update screen
         screen.fill(pygame.Color("black"))
         textsurface = myfont.render(hover_text, False, (200, 0, 0))
-        screen.blit(textsurface,(400,20))
+        screen.blit(textsurface, (400, 20))
         hexmap_object.update()
         pygame.display.update()
         pygame.display.flip()
