@@ -98,9 +98,9 @@ def read_support(active_sheet, passive_sheet):
         pts = sheet.cell_value(i, 1)
         # pts = int(sheet.cell_value(i, 1))
         size = sheet.cell_value(i, 2)
-        if sheet.cell_value(i, 3) == '-':
-            EC = '-'
-        else:
+        try:
+            EC = int(sheet.cell_value(i, 3))
+        except ValueError:
             EC = sheet.cell_value(i, 3)
             # EC = int(sheet.cell_value(i, 3))
         special = 'Passive: ' + sheet.cell_value(i, 4)

@@ -1,5 +1,6 @@
 import math
 import pygame
+import hex_geometry
 
 
 hex_ids = 0
@@ -39,6 +40,7 @@ class HexMap(object):
     
         self.chosen_hex = None
         self.hover = None
+        self.highlight = []
                 
         self.size = 31
 
@@ -61,14 +63,32 @@ class HexMap(object):
                     self.tiles[q+self.radius-1][r+self.radius-1] = self.hexmap[-1]
 
     def update(self):
+        # Color reset
         for hex_cell in self.hexmap:
             hex_cell.update(x_offset=self.x_offset, y_offset=self.y_offset)
+        # Linear approx pathfinding
+        if self.hover and self.chosen_hex:
+            distance = hex_geometry.cube_distance(self.chosen_hex, self.hover)
+            if distance > 0:
+                self.highlight = hex_geometry.cube_linedraw(self.chosen_hex, self.hover)
+                for cube_id in self.highlight:
+                    axial_id = hex_geometry.cube_to_axial(cube_id)
+                    # q = self.chosen_hex.hex_id.q + axial_id.q
+                    # r = self.chosen_hex.hex_id.r + axial_id.r
+
+                    print("Axial_id:", axial_id)
+                    # print(self.tiles[r])
+                    self.tiles[axial_id.q+self.radius-1][axial_id.r+self.radius-1].update((4,4,4),x_offset=self.x_offset, y_offset=self.y_offset)
+            print(f"Distance: {distance}")
+        # Cell selection
         if self.chosen_hex:
             self.chosen_hex.update((204,14,204),x_offset=self.x_offset, y_offset=self.y_offset)
+        # Hover highlight
         if self.hover:
             self.hover.update((14,204,204),x_offset=self.x_offset, y_offset=self.y_offset)
+        # Selected cell hover highlight
         if self.hover is self.chosen_hex and self.hover:
-            self.chosen_hex.update((14,14,204),x_offset=self.x_offset, y_offset=self.y_offset)            
+            self.chosen_hex.update((14,14,204),x_offset=self.x_offset, y_offset=self.y_offset)
 
     def check_position(self, x, y):
         new_x = x-self.real_center
@@ -79,7 +99,7 @@ class HexMap(object):
                 (q_id-1, r_id), (q_id-1, r_id+1), \
                 (q_id+1, r_id), (q_id+1, r_id-1)
         print(q_id, r_id)
-        print(hexes)
+        # print(hexes)
         for item in hexes:
             try:
                 clicked_hex = self.tiles[item[0]+self.radius-1][item[1]+self.radius-1]
@@ -98,11 +118,14 @@ class Hex(object):
     def __init__(self, screen, x, y, size, hex_id):
         self.x = int(x)
         self.y = int(y)
+
         self.screen = screen
         self.size = size
         self.surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        self.hex_id = hex_id
+        self.hex_id = hex_geometry.Axial(*hex_id)
+        self.cube_id = hex_geometry.axial_to_cube(self.hex_id)
         self.token = None
+
         a = self.size/2
         side = int(math.floor(a))
         diag = int(math.floor(SQRT3*a/2))
@@ -130,7 +153,7 @@ def run():
 
     width=600
     height=400
-    screen = pygame.display.set_mode((width, height ))
+    screen = pygame.display.set_mode((width, height))
 
     hexmap_object = HexMap(screen)
 
@@ -162,8 +185,9 @@ def run():
                         hexmap_object.chosen_hex = None
                     # If holding token, put it on an empty place
                     elif not clicked_hex.token and hexmap_object.chosen_hex:
-                        hexmap_object.chosen_hex.token.move(clicked_hex)
-                        hexmap_object.chosen_hex = None
+                        if hexmap_object.chosen_hex.token:
+                            hexmap_object.chosen_hex.token.move(clicked_hex)
+                            hexmap_object.chosen_hex = None
                     # If clicking on space with token, grab it
                     else:
                         hexmap_object.chosen_hex = clicked_hex
