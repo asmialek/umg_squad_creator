@@ -1,4 +1,4 @@
-# import math
+import math
 
 
 class Axial:
@@ -19,6 +19,12 @@ class Cube:
     def __repr__(self):
         return f'({self.x}, {self.y}, {self.z})'
 
+    def __add__(self, other):
+        return Cube(self.x+other.x, self.y+other.y, self.z+other.z)
+
+    def __sub__(self, other):
+        return Cube(self.x+-other.x, self.y-other.y, self.z-other.z)
+
 
 def axial_to_cube(axial):
     return Cube(axial.q, -axial.q-axial.r, axial.r)
@@ -29,8 +35,8 @@ def cube_to_axial(cube):
 
 
 def cube_distance(a, b):
-    ax, ay, az = a.cube_id.x, a.cube_id.y, a.cube_id.z
-    bx, by, bz = b.cube_id.x, b.cube_id.y, b.cube_id.z
+    ax, ay, az = a.x, a.y, a.z
+    bx, by, bz = b.x, b.y, b.z
     return (abs(ax-bx) + abs(ay-by) + abs(az-bz))/2
 
 
@@ -40,19 +46,19 @@ def lerp(a, b, t):
 
 
 def cube_lerp(a, b, t):
-    ax, ay, az = a.cube_id.x, a.cube_id.y, a.cube_id.z
-    bx, by, bz = b.cube_id.x, b.cube_id.y, b.cube_id.z
+    ax, ay, az = a.x, a.y, a.z
+    bx, by, bz = b.x, b.y, b.z
     return Cube(lerp(ax, bx, t), lerp(ay, by, t), lerp(az, bz, t))
 
 
-def cube_round(cube):
-    rx = round(cube.x)
-    ry = round(cube.y)
-    rz = round(cube.z)
+def cube_round(cube, epsilon):
+    rx = round(cube.x+epsilon)
+    ry = round(cube.y+epsilon)
+    rz = round(cube.z+epsilon)
 
-    dx = abs(rx - cube.x)
-    dy = abs(ry - cube.y)
-    dz = abs(rz - cube.z)
+    dx = abs(rx-cube.x)
+    dy = abs(ry-cube.y)
+    dz = abs(rz-cube.z)
 
     if dx > dy and dx > dz:
         rx = -ry-rz
@@ -64,11 +70,11 @@ def cube_round(cube):
     return Cube(rx, ry, rz)
 
 
-def cube_linedraw(a, b):
-    N = int(cube_distance(a, b))
+def cube_linedraw(a, b, distance, epsilon):
+    N = int(distance)
     road = []
     for i in range(0, N+1):
-        road.append(cube_round(cube_lerp(a, b, i/N)))
+        road.append(cube_round(cube_lerp(a, b, i/N), epsilon))
     return road
 
 
@@ -76,3 +82,5 @@ if __name__ == '__main__':
     point = (-1, 3)
     print(axial_to_cube(Axial(*point)))
     print(cube_to_axial(axial_to_cube(Axial(*point))))
+
+    print(Cube(1,2,3)+Cube(3,2,1))

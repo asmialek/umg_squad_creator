@@ -3,8 +3,23 @@ import pygame
 import hex_geometry
 
 
-hex_ids = 0
 SQRT3 = math.sqrt(3)
+
+
+class Rock(object):
+    def __init__(self, screen, hex_cell, name='Rock'):
+        self.name = name
+        self.screen = screen
+        self.hex_cell = hex_cell
+        self.hex_cell.token = self
+        self.x = self.hex_cell.x
+        self.y = self.hex_cell.y
+
+    def update(self):
+        pass
+
+    def move(self, hex_cell):
+        pass
 
 
 class Token(object):
@@ -15,7 +30,7 @@ class Token(object):
         self.hex_cell.token = self
         self.x = self.hex_cell.x
         self.y = self.hex_cell.y
-        self.shape = (10,10,20,20)
+        self.shape = (10, 10, 20, 20)
         self.surf = pygame.Surface((40, 40), pygame.SRCALPHA)
         pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
         screen.blit(self.surf, (self.x, self.y))
@@ -38,21 +53,24 @@ class HexMap(object):
     def __init__(self, screen):
         self.screen = screen
     
+        # Hex parameters
         self.chosen_hex = None
         self.hover = None
-        self.highlight = []
+        self.show_los = False
                 
+        # Map parameters
         self.size = 31
-
-        self.hexmap = []
-    
         self.radius = 7
         self.real_center = 200
         self.center = self.real_center-self.size/2
-        self.tiles = [[None for i in range(-self.radius+1, self.radius)] for j in range(-self.radius+1, self.radius)]
         self.x_offset = 0
         self.y_offset = 0
 
+        # Hex lists (different addresing?)
+        self.hexmap = []
+        self.tiles = [[None for i in range(-self.radius+1, self.radius)] for j in range(-self.radius+1, self.radius)]
+
+        # Setting hex size and positions
         for q in range(-self.radius+1, self.radius):
             for r in range(-self.radius+1, self.radius):
                 r_offset = r*(SQRT3*self.size/2+2)
@@ -63,43 +81,42 @@ class HexMap(object):
                     self.tiles[q+self.radius-1][r+self.radius-1] = self.hexmap[-1]
 
     def update(self):
-        # Color reset
+        # Iterate through all hexes
         for hex_cell in self.hexmap:
+            # Color reset
             hex_cell.update(x_offset=self.x_offset, y_offset=self.y_offset)
+            # Rock coloring
+            if hex_cell.token:
+                if hex_cell.token.name == 'Rock':
+                    hex_cell.update((128, 128, 128), x_offset=self.x_offset, y_offset=self.y_offset)
+            # Visibilty highlight
+            elif hex_cell.has_los and self.chosen_hex:
+                hex_cell.update((154, 154, 54), x_offset=self.x_offset, y_offset=self.y_offset)
         # Linear approx pathfinding
         if self.hover and self.chosen_hex:
-            distance = hex_geometry.cube_distance(self.chosen_hex, self.hover)
-            if distance > 0:
-                self.highlight = hex_geometry.cube_linedraw(self.chosen_hex, self.hover)
-                for cube_id in self.highlight:
-                    axial_id = hex_geometry.cube_to_axial(cube_id)
-                    # q = self.chosen_hex.hex_id.q + axial_id.q
-                    # r = self.chosen_hex.hex_id.r + axial_id.r
-
-                    print("Axial_id:", axial_id)
-                    # print(self.tiles[r])
-                    self.tiles[axial_id.q+self.radius-1][axial_id.r+self.radius-1].update((4,4,4),x_offset=self.x_offset, y_offset=self.y_offset)
-            print(f"Distance: {distance}")
+            _, los_path = self.check_line_of_sight(self.chosen_hex, self.hover)
+            _ = [tile.update((14, 124, 124), x_offset=self.x_offset, y_offset=self.y_offset) for tile in los_path]
         # Cell selection
         if self.chosen_hex:
-            self.chosen_hex.update((204,14,204),x_offset=self.x_offset, y_offset=self.y_offset)
+            self.chosen_hex.update((204, 14, 204), x_offset=self.x_offset, y_offset=self.y_offset)
         # Hover highlight
         if self.hover:
-            self.hover.update((14,204,204),x_offset=self.x_offset, y_offset=self.y_offset)
+            self.hover.update((14, 204, 204), x_offset=self.x_offset, y_offset=self.y_offset)
         # Selected cell hover highlight
         if self.hover is self.chosen_hex and self.hover:
-            self.chosen_hex.update((14,14,204),x_offset=self.x_offset, y_offset=self.y_offset)
+            self.chosen_hex.update((14, 14, 204), x_offset=self.x_offset, y_offset=self.y_offset)
 
     def check_position(self, x, y):
         new_x = x-self.real_center
         new_y = y-self.real_center
         q_id = int(new_x/(3*self.size/4+2))
         r_id = round((new_y/(SQRT3*self.size/2+2)-(new_x/(3*self.size/4+2))/2))
+        
+        # Neigbours ids
         hexes = (q_id, r_id), (q_id, r_id+1), (q_id, r_id-1), \
                 (q_id-1, r_id), (q_id-1, r_id+1), \
                 (q_id+1, r_id), (q_id+1, r_id-1)
-        print(q_id, r_id)
-        # print(hexes)
+        
         for item in hexes:
             try:
                 clicked_hex = self.tiles[item[0]+self.radius-1][item[1]+self.radius-1]
@@ -113,6 +130,32 @@ class HexMap(object):
                 pass
         return None
 
+    def get_tile_from_cube(self, cube):
+        axial = hex_geometry.cube_to_axial(cube)
+        return self.get_tile_from_axial(axial)
+
+    def get_tile_from_axial(self, axial):
+        return self.tiles[axial.q+self.radius-1][axial.r+self.radius-1]
+
+    def check_line_of_sight(self, a, b):
+        distance = hex_geometry.cube_distance(a.cube_id, b.cube_id)
+        if distance > 0:
+            main_path = hex_geometry.cube_linedraw(a.cube_id, b.cube_id, distance, 0.0001)
+            alter_path = hex_geometry.cube_linedraw(a.cube_id, b.cube_id, distance, -0.0001)
+
+            final_path = []
+            
+            for i, cube_id in enumerate(main_path[1:-1]):
+                proposed_tile = self.get_tile_from_cube(cube_id)
+                if proposed_tile.token:
+                    proposed_tile = self.get_tile_from_cube(alter_path[i+1])
+                    if proposed_tile.token:
+                        return [False, final_path]
+                final_path.append(proposed_tile)
+
+            return [True, final_path]
+        return [False, []]
+
 
 class Hex(object):
     def __init__(self, screen, x, y, size, hex_id):
@@ -120,20 +163,26 @@ class Hex(object):
         self.y = int(y)
 
         self.screen = screen
+
+        # Hex parameters
         self.size = size
-        self.surf = pygame.Surface((size, size), pygame.SRCALPHA)
         self.hex_id = hex_geometry.Axial(*hex_id)
         self.cube_id = hex_geometry.axial_to_cube(self.hex_id)
-        self.token = None
-
+        
+        # Drawing
+        self.surf = pygame.Surface((size, size), pygame.SRCALPHA)
         a = self.size/2
         side = int(math.floor(a))
         diag = int(math.floor(SQRT3*a/2))
         half = int(math.floor(a/2))
-        self.points = (side+side,0+side), (half+side, diag+side), (-half+side, diag+side), (-side+side,0+side), (-half+side, -diag+side), (half+side, -diag+side)
-        print(self.points)
-        pygame.draw.polygon(self.surf, (204,204,14), self.points)
+        self.points = (side+side, 0+side), (half+side, diag+side), (-half+side, diag+side), (-side+side, 0+side), (-half+side, -diag+side), (half+side, -diag+side)
+        pygame.draw.polygon(self.surf, (204, 204, 14), self.points)
         self.mask = pygame.mask.from_surface(self.surf)
+        # print(self.points)
+
+        # Hex interactions
+        self.token = None
+        self.has_los = False
 
     def update(self, color=None, x_offset=0, y_offset=0):
         if color:
@@ -151,14 +200,19 @@ def run():
     clock = pygame.time.Clock()
     myfont = pygame.font.SysFont('Comic Sans MS', 14)
 
-    width=600
-    height=400
+    width = 600
+    height = 400
     screen = pygame.display.set_mode((width, height))
 
     hexmap_object = HexMap(screen)
 
     Token(screen, hexmap_object.tiles[6][6], 'Adam')
     Token(screen, hexmap_object.tiles[6][8], 'Kuba')
+
+    Rock(screen, hexmap_object.tiles[4][7])
+    Rock(screen, hexmap_object.tiles[4][6])
+    Rock(screen, hexmap_object.tiles[6][7])
+    Rock(screen, hexmap_object.tiles[4][8])
 
     pygame.display.flip() # paint screen one time
             
@@ -192,6 +246,22 @@ def run():
                     else:
                         hexmap_object.chosen_hex = clicked_hex
                 hexmap_object.hover = clicked_hex
+            # Pause game on space during debugging
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:)
+                    pass
+                if event.key == pygame.K_v:
+                    if hexmap_object.show_los:
+                        for hex_cell in hexmap_object.hexmap:
+                            hex_cell.has_los = False
+                        hexmap_object.show_los = False
+                    elif hexmap_object.chosen_hex:
+                        for hex_cell in hexmap_object.hexmap:
+                            has_los, _ = hexmap_object.check_line_of_sight(hex_cell, hexmap_object.chosen_hex)
+                            hex_cell.has_los = has_los
+                            hexmap_object.show_los = True
+                    else:
+                        hexmap_object.show_los = False
 
         # Print text on side
         if hexmap_object.hover:
