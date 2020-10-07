@@ -145,7 +145,7 @@ def run():
             def_path = squad_name.lower().replace(' ', '_')
             # def_path = "".join(x for x in def_path if x.isalnum())
             file_name = sg.popup_get_file('Choose squad file:', save_as=True,
-                                          default_path=def_path, default_extension='.sqd')
+                                          default_path='./squads/'+def_path, default_extension='.sqd')
             if file_name:
                 with open(re.sub(r'\.sqd$', '', file_name) + '.sqd', 'wb') as f:
                     pickle.dump([squad_name, mech_list], f)

@@ -1,6 +1,7 @@
 import math
 import pygame
-import hex_geometry
+import pathlib
+from umg_game import hex_geometry, load_mechs
 
 
 SQRT3 = math.sqrt(3)
@@ -23,21 +24,26 @@ class Rock(object):
 
 
 class Token(object):
-    def __init__(self, screen, hex_cell, name='None'):
-        self.name = name
+    def __init__(self, screen, hex_cell, mech_object):
         self.screen = screen
         self.hex_cell = hex_cell
         self.hex_cell.token = self
         self.x = self.hex_cell.x
         self.y = self.hex_cell.y
-        self.shape = (10, 10, 20, 20)
-        self.surf = pygame.Surface((40, 40), pygame.SRCALPHA)
-        pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
-        screen.blit(self.surf, (self.x, self.y))
+        self.shape = (5, 36, 50, 24)
+        self.surf = pygame.Surface((60, 60), pygame.SRCALPHA)
+        # pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
+        # screen.blit(self.surf, (self.x, self.y))
+        self.mech = mech_object
+        self.name = self.mech.name
+        self.mech_img = pygame.image.load(self.mech.image) 
+        # self.mech_img = pygame.image.load('./umg_shared/mech_images/mech_b.png') 
+        self.screen.blit(self.mech_img, (self.x, self.y))
 
     def update(self):
-        pygame.draw.rect(self.surf, (250, 0, 0), self.shape)
-        self.screen.blit(self.surf, (self.x, self.y))
+        pygame.draw.ellipse(self.surf, (124, 124, 24), self.shape)
+        self.screen.blit(self.surf, (self.x, self.y-13))
+        self.screen.blit(self.mech_img, (self.x, self.y-20))
 
     def move(self, hex_cell):
         if hex_cell.token:
@@ -59,9 +65,9 @@ class HexMap(object):
         self.show_los = False
                 
         # Map parameters
-        self.size = 31
-        self.radius = 7
-        self.real_center = 200
+        self.size = 61
+        self.radius = 6
+        self.real_center = 320
         self.center = self.real_center-self.size/2
         self.x_offset = 0
         self.y_offset = 0
@@ -85,13 +91,13 @@ class HexMap(object):
         for hex_cell in self.hexmap:
             # Color reset
             hex_cell.update(x_offset=self.x_offset, y_offset=self.y_offset)
+            # Visibilty highlight
+            if hex_cell.has_los and self.chosen_hex:
+                hex_cell.update((180, 100, 49), x_offset=self.x_offset, y_offset=self.y_offset)
             # Rock coloring
             if hex_cell.token:
                 if hex_cell.token.name == 'Rock':
                     hex_cell.update((128, 128, 128), x_offset=self.x_offset, y_offset=self.y_offset)
-            # Visibilty highlight
-            elif hex_cell.has_los and self.chosen_hex:
-                hex_cell.update((154, 154, 54), x_offset=self.x_offset, y_offset=self.y_offset)
         # Linear approx pathfinding
         if self.hover and self.chosen_hex:
             _, los_path = self.check_line_of_sight(self.chosen_hex, self.hover)
@@ -105,6 +111,10 @@ class HexMap(object):
         # Selected cell hover highlight
         if self.hover is self.chosen_hex and self.hover:
             self.chosen_hex.update((14, 14, 204), x_offset=self.x_offset, y_offset=self.y_offset)
+        # Redraw tokens
+        for hex_cell in self.hexmap:
+            if hex_cell.token:
+                hex_cell.token.update()
 
     def check_position(self, x, y):
         new_x = x-self.real_center
@@ -145,15 +155,24 @@ class HexMap(object):
 
             final_path = []
             
-            for i, cube_id in enumerate(main_path[1:-1]):
-                proposed_tile = self.get_tile_from_cube(cube_id)
-                if proposed_tile.token:
-                    proposed_tile = self.get_tile_from_cube(alter_path[i+1])
-                    if proposed_tile.token:
-                        return [False, final_path]
+            for main_id in main_path:
+                proposed_tile = self.get_tile_from_cube(main_id)
+                if proposed_tile.token and proposed_tile not in [a, b]:
+                    final_path = []
+                    for alter_id in alter_path:
+                        proposed_tile = self.get_tile_from_cube(alter_id)
+                        if proposed_tile.token and proposed_tile not in [a, b]:
+                            print('False1')
+                            return [False, final_path]
+                        final_path.append(proposed_tile)
+                    print('True1')
+                    return [True, final_path]
                 final_path.append(proposed_tile)
-
+                
+            print('True2')
             return [True, final_path]
+        
+        print('False2')
         return [False, []]
 
 
@@ -188,7 +207,7 @@ class Hex(object):
         if color:
             pygame.draw.polygon(self.surf, color, self.points)
         else:
-            pygame.draw.polygon(self.surf, (204,204,14), self.points)
+            pygame.draw.polygon(self.surf, (204, 204, 14), self.points)
         self.screen.blit(self.surf, (self.x+x_offset, self.y+y_offset))
         if self.token:
             self.token.update()
@@ -198,21 +217,37 @@ def run():
     pygame.init()
     pygame.font.init()
     clock = pygame.time.Clock()
-    myfont = pygame.font.SysFont('Comic Sans MS', 14)
+    myfont = pygame.font.SysFont('dejavusansmono', 20)
 
-    width = 600
-    height = 400
+    width = 1000
+    height = 640
     screen = pygame.display.set_mode((width, height))
 
     hexmap_object = HexMap(screen)
 
-    Token(screen, hexmap_object.tiles[6][6], 'Adam')
-    Token(screen, hexmap_object.tiles[6][8], 'Kuba')
+    # Mech loading
+    squad_path = pathlib.Path('./squads/alpha_squad.sqd')
+    mech_list = load_mechs.load_mech_list(squad_path)
 
-    Rock(screen, hexmap_object.tiles[4][7])
-    Rock(screen, hexmap_object.tiles[4][6])
-    Rock(screen, hexmap_object.tiles[6][7])
-    Rock(screen, hexmap_object.tiles[4][8])
+    Token(screen, hexmap_object.hexmap[48], mech_list[0])
+    Token(screen, hexmap_object.hexmap[24], mech_list[1])
+    Token(screen, hexmap_object.hexmap[27], mech_list[2])
+
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(0, 0)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(0, 1)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(2, 1)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(3, -3)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-3, -1)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-1, -3)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-4, 3)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-4, 3)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-4, 4)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-3, 4)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-2, 4)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(-2, 5)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(4, -2)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(0, -4)))
+    Rock(screen, hexmap_object.get_tile_from_axial(hex_geometry.Axial(3, 1)))
 
     pygame.display.flip() # paint screen one time
             
@@ -242,14 +277,18 @@ def run():
                         if hexmap_object.chosen_hex.token:
                             hexmap_object.chosen_hex.token.move(clicked_hex)
                             hexmap_object.chosen_hex = None
+                        # If not holding token, pick cliked hex
+                        else:
+                            hexmap_object.chosen_hex = clicked_hex
                     # If clicking on space with token, grab it
                     else:
                         hexmap_object.chosen_hex = clicked_hex
                 hexmap_object.hover = clicked_hex
-            # Pause game on space during debugging
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:)
+                # Pause game on space during debugging
+                if event.key == pygame.K_SPACE:
                     pass
+                # Show visibility overlay
                 if event.key == pygame.K_v:
                     if hexmap_object.show_los:
                         for hex_cell in hexmap_object.hexmap:
@@ -266,18 +305,36 @@ def run():
         # Print text on side
         if hexmap_object.hover:
             if hexmap_object.hover.token:
-                hover_text = hexmap_object.hover.token.name
+                token = hexmap_object.hover.token
+            else:
+                token = None
         elif hexmap_object.chosen_hex:
             if hexmap_object.chosen_hex.token:
-                print(hexmap_object.chosen_hex.token.name)
-                hover_text = hexmap_object.chosen_hex.token.name
+                token = hexmap_object.chosen_hex.token
+            else:
+                token = None
+        else:
+            token = None
+
+        if token:
+            hover_text = f'{token.name}\n\n'
+            if hasattr(token, 'mech'):
+                mech = token.mech
+                hover_text += f'AM: {mech.current_hp}  EG: {mech.EG}\n'
+                hover_text += f'Energy: {mech.energy}\n\n'
+                for slot in mech.slots:
+                    if mech.slots[slot]:
+                        hover_text += f'{mech.slots[slot].name}\n'
         else:
             hover_text = ''
-
+        
         # Update screen
         screen.fill(pygame.Color("black"))
-        textsurface = myfont.render(hover_text, False, (200, 0, 0))
-        screen.blit(textsurface, (400, 20))
+
+        for i, line in enumerate(hover_text.splitlines()):
+            textsurface = myfont.render(line, False, (200, 200, 200))
+            screen.blit(textsurface, (680, 200+i*24))
+
         hexmap_object.update()
         pygame.display.update()
         pygame.display.flip()

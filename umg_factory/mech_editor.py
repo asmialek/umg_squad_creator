@@ -188,7 +188,10 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
                   [sg.Text(' ', size=(70, 1)),
                    sg.Button('GENERATE', key="-gen-", enable_events=True),
                    sg.Text(' ', size=(2, 1)),
-                   sg.Button('FINISH', key="-fin-", enable_events=True)]
+                   sg.Button('CHOOSE IMG', key="-img-", enable_events=True),
+                   sg.Text(' ', size=(2, 1)),
+                   sg.Button('FINISH', key="-fin-", enable_events=True)
+                   ]
                   ]
 
     sub_window = sg.Window('Mech Factory', new_layout, resizable=True)
@@ -212,6 +215,11 @@ def open_new_window(mech, frames_dict, modules_dict, pts_total):
             update_slots_values(mech, modules_dict, sub_window)
         elif event == '-gen-':
             write_to_excel(mech)
+        elif event == '-img-':
+            file_name = sg.popup_get_file('Choose mech image:')
+            if file_name:
+                print(file_name)
+                mech.image = file_name
         elif event in slot_events:
             # print('>>>', modules_dict[values[event]])
             keys_list = list(mech.slots.keys())

@@ -37,7 +37,8 @@ class Mech:
         self.current_hp = self.AM
         self.special = self.frame.special
         self.slots = self.frame.slots.copy()
-        self.image = 'mech.jpg'
+        self.image = './umg_shared/mech_images/resized/15310.png'  
+        # https://www.spriters-resource.com/ds_dsi/superrobotwarsw/
 
     def __repr__(self):
         return str(f'Mech:\t {self.name}\n'
