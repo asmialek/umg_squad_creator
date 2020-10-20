@@ -3,7 +3,7 @@ import time
 import queue
 import pygame
 import pathlib
-from umg_game import hex_geometry, load_mechs
+from umg_game import hex_geometry, load_mechs, colors
 
 
 SQRT3 = math.sqrt(3)
@@ -47,6 +47,7 @@ class Token(object):
         else:
             self.name = name
         img_name = '/'.join(self.mech.image.split('/')[3:])
+        print(img_name)
         self.mech_img = pygame.image.load(img_name) 
         self.screen.blit(self.mech_img, (self.x, self.y))
 
@@ -99,49 +100,62 @@ class HexMap(object):
                     self.hexmap.append(Hex(self.screen, self.center+q_offset, self.center+r_offset+rq_offset, self.size, (q, r)))
                     self.tiles[q+self.radius-1][r+self.radius-1] = self.hexmap[-1]
 
-    def update(self):
+    def reset(self):
         # Iterate through all hexes
         for hex_cell in self.hexmap:
             # Color reset
             hex_cell.update(x_offset=self.x_offset, y_offset=self.y_offset)
+
+    def update(self):
+        # Iterate through all hexes
+        for hex_cell in self.hexmap:
             # Visibilty highlight
             if hex_cell.has_los and self.chosen_hex:
-                hex_cell.update((180, 100, 49), x_offset=self.x_offset, y_offset=self.y_offset)
+                hex_cell.update(colors.vis, x_offset=self.x_offset, y_offset=self.y_offset)
             # Rock coloring
             if hex_cell.token:
                 if hex_cell.token.name == 'Rock':
-                    hex_cell.update((128, 128, 128), x_offset=self.x_offset, y_offset=self.y_offset)
-        # Display line of sight 
+                    hex_cell.update(colors.rock, x_offset=self.x_offset, y_offset=self.y_offset)
+        
+        # Display line of sight
         if self.hover and self.chosen_hex and self.show_los:
             _, los_path = self.check_line_of_sight(self.chosen_hex, self.hover)
-            _ = [tile.update((14, 124, 124), x_offset=self.x_offset, y_offset=self.y_offset) for tile in los_path]
+            _ = [tile.update(colors.dred, x_offset=self.x_offset, y_offset=self.y_offset) for tile in los_path]
         # Display pathfinding
         elif self.hover and self.chosen_hex:
             if self.chosen_hex.token:
                 if self.hover != self.hover_old:
                     self.pathfinding_path = self.astar_pathfinding(self.chosen_hex, self.hover)
                     self.hover_old = self.hover
-                _ = [tile.update((174, 54, 174), x_offset=self.x_offset,
+                if len(self.pathfinding_path) > self.chosen_hex.token.mech.remaining_mv+1:
+                    self.pathfinding_path = self.pathfinding_path[1:self.chosen_hex.token.mech.remaining_mv+1]
+                _ = [tile.update(colors.dblue, x_offset=self.x_offset,
                                  y_offset=self.y_offset) for tile in self.pathfinding_path]
+
         # Cell selection
         if self.chosen_hex:
-            self.chosen_hex.update((204, 14, 204), x_offset=self.x_offset, y_offset=self.y_offset)
+            self.chosen_hex.update(colors.selection, x_offset=self.x_offset, y_offset=self.y_offset)
+
         # Hover highlight
         if self.hover and hasattr(self.hover.token, 'player'):
             self.hover.update(self.hover.token.player.color,
                               x_offset=self.x_offset, y_offset=self.y_offset)
+        elif self.hover and self.hover.token is not None:
+            self.hover.update(colors.rock_highlight,
+                              x_offset=self.x_offset, y_offset=self.y_offset)
         elif self.hover:
-            self.hover.update((14, 204, 204), x_offset=self.x_offset, y_offset=self.y_offset)
+            self.hover.update(colors.highlight, x_offset=self.x_offset, y_offset=self.y_offset)
+
         # Selected cell hover highlight
         if self.hover is self.chosen_hex and self.hover:
             self.chosen_hex.update((14, 14, 204), x_offset=self.x_offset, y_offset=self.y_offset)
+
         # Redraw tokens
         for hex_cell in self.hexmap:
             if hex_cell.token:
                 hex_cell.token.update()
         if self.chosen_hex is None:
             self.pathfinding_path = []
-
 
     def check_position(self, x, y):
         new_x = x-self.real_center
@@ -272,7 +286,7 @@ class Hex(object):
         half = int(math.floor(a/2))
         self.points = (side+side, 0+side), (half+side, diag+side), (-half+side, diag+side),\
                       (-side+side, 0+side), (-half+side, -diag+side), (half+side, -diag+side)
-        pygame.draw.polygon(self.surf, (204, 204, 14), self.points)
+        pygame.draw.polygon(self.surf, colors.tile, self.points)
         self.mask = pygame.mask.from_surface(self.surf)
         # print(self.points)
 
@@ -290,7 +304,7 @@ class Hex(object):
         if color:
             pygame.draw.polygon(self.surf, color, self.points)
         else:
-            pygame.draw.polygon(self.surf, (204, 204, 14), self.points)
+            pygame.draw.polygon(self.surf, colors.tile, self.points)
         self.screen.blit(self.surf, (self.x+x_offset, self.y+y_offset))
         if self.token:
             self.token.update()

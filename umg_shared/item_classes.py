@@ -20,6 +20,20 @@ class Module:
         self.special = special
         self.module_type = module_type
 
+        self.tooltip = self.create_tooltip()
+
+    def create_tooltip(self):
+        tooltip = f'{self.module_type} ({self.size})<br/><br/>'
+        tooltip += f'Energy cost: {self.EC}<br/>'
+        if self.module_type == 'Weapon':
+            tooltip += f'Range: {self.RG}<br/>'
+            tooltip += f'Damage: {self.DM}<br/>'
+        tooltip += f'<br/>{self.special}'
+        return tooltip
+
+    def use(self):
+        print('Module used:', self.name)
+
 
 # TODO: Add player class and set if for Mech objects
 
@@ -35,12 +49,13 @@ class Mech:
         self.EG = self.frame.EG
         self.energy = 0
         self.current_hp = self.AM
+        self.remaining_mv = self.MV
         self.special = self.frame.special
         self.slots = self.frame.slots.copy()
-        self.image = './umg_shared/mech_images/resized/15310.png'  
+        self.image = 'C:/Projects/umg_squad_creator/umg_shared/mech_images/resized/15310.png'
         # https://www.spriters-resource.com/ds_dsi/superrobotwarsw/
 
-    def __repr__(self):
+    def __print__(self):
         return str(f'Mech:\t {self.name}\n'
                    f'Player:\t {str(self.player)}\n'
                    f'AM:\t {self.AM}\n'
