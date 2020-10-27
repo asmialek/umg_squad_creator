@@ -63,7 +63,7 @@ class Game(object):
         font_base['basic'] = pygame.font.SysFont('dejavusansmono', 20)
         return font_base
 
-    def create_buttons(self):
+    def create_slot_buttons(self):
         for player in self.player_list:
             self.button_dict[player] = {}
             for token in player.mech_list:
@@ -144,7 +144,7 @@ class Game(object):
         for player in self.player_list:
             player.update_params()
 
-        self.create_buttons()
+        self.create_slot_buttons()
 
         # Rock placing
         rock_range = [(0, 0), (0, 1), (2, 1), (3, -3), (-3, -1), (-1, -3),
@@ -306,7 +306,7 @@ class Game(object):
                 self.screen.blit(player_text, (780, 560))
             turn_text = self.font_base['basic'].render("  Turn: ", False, (200, 200, 200))
             self.screen.blit(turn_text, (680, 584))
-            turn_text = self.font_base['basic'].render(str(self.turn), False, (200, 200,200))
+            turn_text = self.font_base['basic'].render(str(self.turn), False, (200, 200, 200))
             self.screen.blit(turn_text, (780, 584))
 
             # Pygame update

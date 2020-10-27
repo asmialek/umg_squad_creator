@@ -124,13 +124,14 @@ class HexMap(object):
         # Display pathfinding
         elif self.hover and self.chosen_hex:
             if self.chosen_hex.token:
-                if self.hover != self.hover_old:
-                    self.pathfinding_path = self.astar_pathfinding(self.chosen_hex, self.hover)
-                    self.hover_old = self.hover
-                if len(self.pathfinding_path) > self.chosen_hex.token.mech.remaining_mv+1:
-                    self.pathfinding_path = self.pathfinding_path[1:self.chosen_hex.token.mech.remaining_mv+1]
-                _ = [tile.update(colors.dblue, x_offset=self.x_offset,
-                                 y_offset=self.y_offset) for tile in self.pathfinding_path]
+                if hasattr(self.chosen_hex.token, 'mech'):
+                    if self.hover != self.hover_old:
+                        self.pathfinding_path = self.astar_pathfinding(self.chosen_hex, self.hover)
+                        self.hover_old = self.hover
+                    if len(self.pathfinding_path) > self.chosen_hex.token.mech.remaining_mv+1:
+                        self.pathfinding_path = self.pathfinding_path[1:self.chosen_hex.token.mech.remaining_mv+1]
+                    _ = [tile.update(colors.dblue, x_offset=self.x_offset,
+                                    y_offset=self.y_offset) for tile in self.pathfinding_path]
 
         # Cell selection
         if self.chosen_hex:

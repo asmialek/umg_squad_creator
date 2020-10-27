@@ -1,3 +1,10 @@
+from umg_shared import umg_logging
+
+
+logger = umg_logging.Logger(printer=True)
+log = logger.log
+
+
 class Frame:
     def __init__(self, name, pts, MV, AM, EG, special, slots):
         self.name = name
@@ -20,7 +27,7 @@ class Module:
         self.special = special
         self.module_type = module_type
 
-        self.tooltip = self.create_tooltip()
+        # self.tooltip = self.create_tooltip()
 
     def create_tooltip(self):
         tooltip = f'{self.module_type} ({self.size})<br/><br/>'
@@ -33,6 +40,27 @@ class Module:
 
     def use(self):
         print('Module used:', self.name)
+
+
+class Weapon(Module):
+    def __init__(self, name, pts, size, DM, RG, EC, special, module_type):
+        super().__init__(name, pts, size, DM, RG, EC, special, module_type)
+
+        self.tooltip = self.create_tooltip()
+
+    def use(self, user, target):
+            # print(user)
+            # print(target)
+
+            if not user.spend_energy(self.EC):
+                return False
+
+            if target.receive_damage(self.DM):
+                return False
+
+            log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')
+            
+            return True
 
 
 # TODO: Add player class and set if for Mech objects
@@ -82,6 +110,37 @@ class Mech:
         if new_module:
             self.pts += self.slots[slot_name].pts
         self.pts = int(self.pts)
+
+    def spend_energy(self, energy_cost):
+        if isinstance(energy_cost, int):
+            if self.energy >= energy_cost:
+                self.energy -= energy_cost
+                return True
+            else:
+                log('Not enough energy!')
+                return False    
+        elif energy_cost == '-':
+            return True
+        elif energy_cost == 'X':
+            log('Function not yet implemented!')
+            return False
+        else:
+            raise ValueError(f'Unexpected energy cost: {energy_cost}')
+
+    def receive_damage(self, damage):
+        if isinstance(damage, int):
+            self.current_hp -= damage
+            return True
+        elif damage == '-':
+            return True
+        elif damage == 'X':
+            log('Function not yet implemented!')
+            return False
+        else:
+            log(f'Unknown damage value: {damage}')
+
+        if self.current_hp <= 0:
+            log(f'{self.name} destroyed!')
 
 
 # class Weapon:
