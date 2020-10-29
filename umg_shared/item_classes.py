@@ -17,17 +17,22 @@ class Frame:
 
 
 class Module:
-    def __init__(self, name, pts, size, DM, RG, EC, special, module_type):
-        self.name = name
-        self.pts = pts
-        self.size = size
-        self.DM = DM
-        self.RG = RG
-        self.EC = EC
-        self.special = special
-        self.module_type = module_type
+    def __init__(self):
+        self.name = None
+        self.pts = None
+        self.size = None
+        self.DM = None
+        self.RG = None
+        self.EC = None
+        self.special = None
+        self.module_type = None
 
-        # self.tooltip = self.create_tooltip()
+        self.define()
+
+        self.tooltip = self.create_tooltip()
+
+    def define(self):
+        pass
 
     def create_tooltip(self):
         tooltip = f'{self.module_type} ({self.size})<br/><br/>'
@@ -38,16 +43,11 @@ class Module:
         tooltip += f'<br/>{self.special}'
         return tooltip
 
-    def use(self):
+    def use(self, *args):
         print('Module used:', self.name)
 
 
 class Weapon(Module):
-    def __init__(self, name, pts, size, DM, RG, EC, special, module_type):
-        super().__init__(name, pts, size, DM, RG, EC, special, module_type)
-
-        self.tooltip = self.create_tooltip()
-
     def use(self, user, target):
             # print(user)
             # print(target)
@@ -55,7 +55,7 @@ class Weapon(Module):
             if not user.spend_energy(self.EC):
                 return False
 
-            if target.receive_damage(self.DM):
+            if not target.receive_damage(self.DM):
                 return False
 
             log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')

@@ -47,30 +47,30 @@ def read_frames(sheet):
     return frames
 
 
-def read_weapons(sheet):
-    weapons = {}
-    for i in range(2, sheet.nrows):
-        name = sheet.cell_value(i, 0).replace('\n', ' ')
-        pts = int(sheet.cell_value(i, 1))
-        size = sheet.cell_value(i, 2)
-        try:
-            DM = int(sheet.cell_value(i, 3))
-        except ValueError:
-            DM = sheet.cell_value(i, 3)
-        try:
-            RG = int(sheet.cell_value(i, 4))
-        except ValueError:
-            RG = sheet.cell_value(i, 4)
-        if sheet.cell_value(i, 5) == '-':
-            EC = '-'
-        elif sheet.cell_value(i, 5) == 'X':
-            EC = 'X'
-        else:
-            EC = int(sheet.cell_value(i, 5))
-        special = sheet.cell_value(i, 6)
-        if name:
-            weapons[name] = Module(name, pts, size, DM, RG, EC, special, 'Weapon')
-    return weapons
+# def read_weapons(sheet):
+#     weapons = {}
+#     for i in range(2, sheet.nrows):
+#         name = sheet.cell_value(i, 0).replace('\n', ' ')
+#         pts = int(sheet.cell_value(i, 1))
+#         size = sheet.cell_value(i, 2)
+#         try:
+#             DM = int(sheet.cell_value(i, 3))
+#         except ValueError:
+#             DM = sheet.cell_value(i, 3)
+#         try:
+#             RG = int(sheet.cell_value(i, 4))
+#         except ValueError:
+#             RG = sheet.cell_value(i, 4)
+#         if sheet.cell_value(i, 5) == '-':
+#             EC = '-'
+#         elif sheet.cell_value(i, 5) == 'X':
+#             EC = 'X'
+#         else:
+#             EC = int(sheet.cell_value(i, 5))
+#         special = sheet.cell_value(i, 6)
+#         if name:
+#             weapons[name] = Module(name, pts, size, DM, RG, EC, special, 'Weapon')
+#     return weapons
 
 
 def read_support(active_sheet, passive_sheet):

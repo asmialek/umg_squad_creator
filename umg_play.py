@@ -3,7 +3,7 @@ import pygame_gui
 import pathlib
 import copy
 from umg_game import hexmap, hex_geometry, load_mechs
-
+from umg_shared import umg_logging
 
 class Player(object):
     def __init__(self, name, color=(100, 100, 200)):
@@ -30,15 +30,12 @@ class Game(object):
         
         self.turn = 0
 
-
+        # Pygame initialization
         pygame.init()
         pygame.font.init()
         self.clock = pygame.time.Clock()
-
         self.font_base = self.define_fonts()
-
         self.window_size = window_size
-
 
         # Pygame graphics
         self.screen = self.create_window(self.window_size)
@@ -54,6 +51,9 @@ class Game(object):
         self.button_dict = {}
         self.button_list = []
         self.last_button = None
+
+        # Gameplay interactions
+        self.use_function = None
 
     def create_window(self, window_size):
         return pygame.display.set_mode(window_size)
@@ -89,6 +89,7 @@ class Game(object):
             if self.last_button == button:
                 self.last_button = None
                 self.hexmap_object.show_los = False
+                self.use_function = None
                 return
 
         # Set button state to pressed
@@ -100,11 +101,12 @@ class Game(object):
                 for slot in self.button_dict[player][token]:
                     if button == self.button_dict[player][token][slot]:
                         item_slot = token.mech.slots[slot]
+                        # here should go the entire logic behind ranges and targeting
                         self.hexmap_object.show_los = True
-                        item_slot.use()
+                        self.use_function = item_slot.use
 
         self.last_button = button
-        return
+        return 
 
     def move_token(self, start, end):
         # check remain movement
@@ -200,6 +202,21 @@ class Game(object):
                             # If not holding token, pick cliked hex
                             else:
                                 self.hexmap_object.chosen_hex = clicked_hex
+                        # If mech is chosen and and mech is clicked
+                        elif clicked_hex.token and self.hexmap_object.chosen_hex:
+                            if self.hexmap_object.chosen_hex.token:
+                                if hasattr(clicked_hex.token, 'mech') and hasattr(self.hexmap_object.chosen_hex.token, 'mech'):
+                                    # If you have your mech and click on enemy
+                                    if self.hexmap_object.chosen_hex.token in self.current_player.mech_list and \
+                                       clicked_hex.token not in self.current_player.mech_list:
+                                        print('targeting!')
+                                        if self.use_function:
+                                            if not self.hexmap_object.chosen_hex.token.mech.has_acted:
+                                                self.use_function(self.hexmap_object.chosen_hex.token.mech, clicked_hex.token.mech)
+                                                self.hexmap_object.chosen_hex.token.mech.has_acted = True
+                                            else:
+                                                log
+                                            self.button_pressed(self.last_button)
                         # If clicking on space with token, grab it
                         else:
                             self.hexmap_object.chosen_hex = clicked_hex
@@ -207,6 +224,8 @@ class Game(object):
                         print('Clicked:', clicked_hex.axial_id)
                     self.hexmap_object.hover = clicked_hex
 
+
+                # Keyboard interaction
                 if event.type == pygame.KEYDOWN:
                     # Click "D" to pause game while debugging
                     if event.key == pygame.K_d:
@@ -234,7 +253,7 @@ class Game(object):
                     if event.key == pygame.K_a:
                         self.hexmap_object.show_los = not self.hexmap_object.show_los
 
-                # All button events
+                # All UI button events
                 if event.type == pygame.USEREVENT:
                     if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                         for button in self.button_list:

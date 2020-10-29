@@ -5,7 +5,9 @@ import xlrd
 import PySimpleGUI as sg
 
 from umg_shared.item_classes import Mech
-from umg_factory.blueprints_reader import read_support, read_weapons, read_frames
+from umg_shared.weapons_list import create_weapons_list
+# from umg_factory.blueprints_reader import read_support, read_weapons, read_frames
+from umg_factory.blueprints_reader import read_support, read_frames
 from umg_factory.mech_editor import open_new_window
 from umg_factory.excel_writer import write_list_to_excel
 
@@ -47,11 +49,12 @@ def run():
     support_passive_sheet = wb.sheet_by_name("Support Passive")
 
     frames_dict = read_frames(frames_sheet)
-    weapons_dict = read_weapons(weapons_sheet)
-    support_dict = read_support(support_active_sheet, support_passive_sheet)
+    weapons_dict = create_weapons_list()
+    # weapons_dict = read_weapons(weapons_sheet)
+    # support_dict = read_support(support_active_sheet, support_passive_sheet)
     modules_dict = {}
     modules_dict.update(weapons_dict)
-    modules_dict.update(support_dict)
+    # modules_dict.update(support_dict)
 
     mech_list = []
     pts_total = 0

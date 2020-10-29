@@ -1,6 +1,6 @@
 import pathlib
 from umg_game import load_mechs
-from umg_shared import umg_logging
+from umg_shared import umg_logging, weapons_list
 
 
 squad_path = pathlib.Path('./squads/alpha_squad.sqd')
@@ -75,26 +75,29 @@ def attack(attacker, target, slot_id):
 
 
 if __name__ == '__main__':
-    mech_list = load_mechs.load_mech_list(squad_path)
 
-    player = mech_list[0]
-    opponent = mech_list[1]
-    print('\n-!!------- GAME START -------!!-\n')
-    print(player)
-    print(opponent)
+
+    # mech_list = load_mechs.load_mech_list(squad_path)
+
+    # player = mech_list[0]
+    # opponent = mech_list[1]
+    # print('\n-!!------- GAME START -------!!-\n')
+    # print(player)
+    # print(opponent)
     
-    while(player.current_hp > 0 and opponent.current_hp > 0):
-        print('---------- NEW TURN ----------\n')
-        generate_energy(player)
-        chosen_id = input('Player1, choose your weapon: ')
-        print('')
-        attack(player, opponent, int(chosen_id))
-        print('')
-        print(player)
-        print(opponent)
-        chosen_id = input('Player2, choose your weapon: ')
-        print('')
-        attack(opponent, player, int(chosen_id))
-        print('')
-        print(player)
-        print(opponent)
+    # while(player.current_hp > 0 and opponent.current_hp > 0):
+    #     print('---------- NEW TURN ----------\n')
+    #     generate_energy(player)
+    #     chosen_id = input('Player1, choose your weapon: ')
+    #     print('')
+    #     attack(player, opponent, int(chosen_id))
+    #     print('')
+    #     print(player)
+    #     print(opponent)
+    #     chosen_id = input('Player2, choose your weapon: ')
+    #     print('')
+    #     attack(opponent, player, int(chosen_id))
+    #     print('')
+    #     print(player)
+    #     print(opponent)
+    pass
