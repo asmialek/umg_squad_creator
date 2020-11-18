@@ -2,8 +2,10 @@ import pygame
 import pygame_gui
 import pathlib
 import copy
+import time
 from umg_game import hexmap, hex_geometry, load_mechs
 from umg_shared import umg_logging
+
 
 class Player(object):
     def __init__(self, name, color=(100, 100, 200)):
@@ -54,6 +56,7 @@ class Game(object):
 
         # Gameplay interactions
         self.use_function = None
+        self.mode = None
 
     def create_window(self, window_size):
         return pygame.display.set_mode(window_size)
@@ -84,31 +87,81 @@ class Game(object):
     def button_pressed(self, button):
         if self.last_button:
             # Unpress the old button
+            self.show_movement_range(True)
             self.last_button._set_inactive()
             # Unpress the clicked button
             if self.last_button == button:
                 self.last_button = None
                 self.hexmap_object.show_los = False
+                self.show_visibility(False)
                 self.use_function = None
                 return
 
-        # Set button state to pressed
-        button._set_active()
-
-        # Use the chosen module
-        for player in self.player_list:
-            for token in self.button_dict[player]:
-                for slot in self.button_dict[player][token]:
-                    if button == self.button_dict[player][token][slot]:
-                        item_slot = token.mech.slots[slot]
-                        # here should go the entire logic behind ranges and targeting
-                        self.hexmap_object.show_los = True
-                        self.use_function = item_slot.use
+        if button:
+            # Set button state to pressed
+            self.show_movement_range(False)
+            button._set_active()
+            # Use the chosen module
+            for player in self.player_list:
+                for token in self.button_dict[player]:
+                    for slot in self.button_dict[player][token]:
+                        if button == self.button_dict[player][token][slot]:
+                            item_slot = token.mech.slots[slot]
+                            # here should go the entire logic behind ranges and targeting
+                            self.hexmap_object.show_los = True
+                            self.show_visibility(True)
+                            self.use_function = item_slot.use
 
         self.last_button = button
-        return 
+        return
+
+    def change_mode(self, mode):
+        if self.mode != mode:
+            self.mode = mode
+        print('mode:', self.mode)
+
+    def show_visibility(self, toggle):
+        if toggle and self.hexmap_object.chosen_hex:
+            for hex_cell in self.hexmap_object.hexmap:
+                has_los, _ = self.hexmap_object.check_line_of_sight(hex_cell,
+                                                                self.hexmap_object.chosen_hex)
+                hex_cell.has_los = has_los
+            self.change_mode('targeting')
+        else:
+            for hex_cell in self.hexmap_object.hexmap:
+                hex_cell.has_los = False
+            self.change_mode(None)
+
+    def show_movement_range(self, toggle):
+        if not self.hexmap_object.chosen_hex.token:
+            self.change_mode(None)
+            return False
+        elif not self.hexmap_object.chosen_hex.token.mech:
+            self.change_mode(None)
+            return False
+        
+        if toggle and self.hexmap_object.chosen_hex:
+            old = time.time()
+            for hex_cell in self.hexmap_object.hexmap:
+                if hex_geometry.cube_distance(self.hexmap_object.chosen_hex.cube_id, hex_cell.cube_id) > self.hexmap_object.chosen_hex.token.mech.remaining_mv:
+                    continue
+                move_path = self.hexmap_object.astar_pathfinding(self.hexmap_object.chosen_hex, hex_cell)
+                print(len(move_path), self.hexmap_object.chosen_hex.token.mech.remaining_mv)
+                if len(move_path) - 1 <= self.hexmap_object.chosen_hex.token.mech.remaining_mv:
+                    hex_cell.has_mv = bool(move_path)
+            print('time:', time.time() - old)
+            self.change_mode('movement')
+        else:
+            for hex_cell in self.hexmap_object.hexmap:
+                hex_cell.has_mv = False
+            self.change_mode(None)
+        return True
+
 
     def move_token(self, start, end):
+        # check current mode
+        if self.mode != 'movement':
+            return False
         # check remain movement
         remaining_movement = start.token.mech.remaining_mv
         if remaining_movement == 0:
@@ -125,6 +178,12 @@ class Game(object):
         print(start.token.mech.remaining_mv)
         start.token.move(path[-1])
         return True
+
+    def unclick_mech(self):
+        self.show_visibility(False)
+        self.show_movement_range(False)
+        self.button_pressed(None)
+        self.hexmap_object.chosen_hex = None
 
     def new_turn(self):
         self.current_player_list = copy.copy(self.player_list)
@@ -189,19 +248,24 @@ class Game(object):
                     if clicked_hex:
                         # If clicked hex_cell is already chosen, unclick it
                         if clicked_hex == self.hexmap_object.chosen_hex:
-                            self.hexmap_object.chosen_hex = None
+                            self.unclick_mech()
                         # If holding token, put it on an empty place
                         elif not clicked_hex.token and self.hexmap_object.chosen_hex:
                             if self.hexmap_object.chosen_hex.token:
                                 # Check whether chosen token is owned by the current player
                                 if self.hexmap_object.chosen_hex.token in self.current_player.mech_list:
                                     self.move_token(self.hexmap_object.chosen_hex, clicked_hex)
-                                    self.hexmap_object.chosen_hex = None
+                                    # self.unclick_mech()
+                                    self.hexmap_object.chosen_hex = clicked_hex
+                                    self.show_movement_range(False)
+                                    self.show_movement_range(True)
                                 else:
-                                    self.hexmap_object.chosen_hex = None
+                                    self.unclick_mech()
                             # If not holding token, pick cliked hex
                             else:
                                 self.hexmap_object.chosen_hex = clicked_hex
+                                self.show_visibility(False)
+                                self.show_movement_range(True)
                         # If mech is chosen and and mech is clicked
                         elif clicked_hex.token and self.hexmap_object.chosen_hex:
                             if self.hexmap_object.chosen_hex.token:
@@ -215,11 +279,15 @@ class Game(object):
                                                 self.use_function(self.hexmap_object.chosen_hex.token.mech, clicked_hex.token.mech)
                                                 self.hexmap_object.chosen_hex.token.mech.has_acted = True
                                             else:
-                                                log
+                                                # TODO: something here
+                                                pass
+                                                # log
                                             self.button_pressed(self.last_button)
                         # If clicking on space with token, grab it
                         else:
                             self.hexmap_object.chosen_hex = clicked_hex
+                            self.show_visibility(False)
+                            self.show_movement_range(True)
                         self.hexmap_object.chosen_old = self.hexmap_object.chosen_hex
                         print('Clicked:', clicked_hex.axial_id)
                     self.hexmap_object.hover = clicked_hex
@@ -235,20 +303,6 @@ class Game(object):
                         self.current_player = self.current_player_list.pop()
                         if not self.current_player_list:
                             self.new_turn()
-                    # Show visibility overlay
-                    if event.key == pygame.K_v:
-                        if self.hexmap_object.show_vis:
-                            for hex_cell in self.hexmap_object.hexmap:
-                                hex_cell.has_los = False
-                            self.hexmap_object.show_vis = False
-                        elif self.hexmap_object.chosen_hex:
-                            for hex_cell in self.hexmap_object.hexmap:
-                                has_los, _ = self.hexmap_object.check_line_of_sight(hex_cell,
-                                                                               self.hexmap_object.chosen_hex)
-                                hex_cell.has_los = has_los
-                                self.hexmap_object.show_vis = True
-                        else:
-                            self.hexmap_object.show_vis = False
                     # Show line of sight
                     if event.key == pygame.K_a:
                         self.hexmap_object.show_los = not self.hexmap_object.show_los

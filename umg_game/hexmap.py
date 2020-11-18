@@ -37,8 +37,9 @@ class Token(object):
         self.hex_cell.token = self
         self.x = self.hex_cell.x
         self.y = self.hex_cell.y
-        self.shape = (5, 36, 50, 24)
-        self.surf = pygame.Surface((60, 60), pygame.SRCALPHA)
+        self.shape_shadow = (5, 36, 50, 24)
+        self.shape_player_flag = (16, 65, 29, 3)
+        self.surf = pygame.Surface((60, 80), pygame.SRCALPHA)
         self.player = player
 
         self.mech = mech_object
@@ -52,7 +53,8 @@ class Token(object):
         self.screen.blit(self.mech_img, (self.x, self.y))
 
     def update(self):
-        pygame.draw.ellipse(self.surf, (124, 124, 24), self.shape)
+        pygame.draw.ellipse(self.surf, (124, 124, 24), self.shape_shadow)
+        pygame.draw.rect(self.surf, self.player.color, self.shape_player_flag)
         self.screen.blit(self.surf, (self.x, self.y-13))
         self.screen.blit(self.mech_img, (self.x, self.y-20))
 
@@ -72,7 +74,6 @@ class HexMap(object):
         self.chosen_hex = None
         self.hover = None
         self.show_los = False
-        self.show_vis = False
         self.hover_old = None
         self.chosen_old = None
         self.pathfinding_path = []
@@ -112,10 +113,23 @@ class HexMap(object):
             # Visibilty highlight
             if hex_cell.has_los and self.chosen_hex:
                 hex_cell.update(colors.vis, x_offset=self.x_offset, y_offset=self.y_offset)
+            # Visibilty highlight
+            if hex_cell.has_mv and self.chosen_hex:
+                hex_cell.update(colors.mov, x_offset=self.x_offset, y_offset=self.y_offset)
             # Rock coloring
             if hex_cell.token:
                 if hex_cell.token.name == 'Rock':
                     hex_cell.update(colors.rock, x_offset=self.x_offset, y_offset=self.y_offset)
+                    
+        # Hover highlight
+        if self.hover and hasattr(self.hover.token, 'player'):
+            self.hover.update(self.hover.token.player.color,
+                              x_offset=self.x_offset, y_offset=self.y_offset)
+        elif self.hover and self.hover.token is not None:
+            self.hover.update(colors.rock_highlight,
+                              x_offset=self.x_offset, y_offset=self.y_offset)
+        elif self.hover:
+            self.hover.update(colors.highlight, x_offset=self.x_offset, y_offset=self.y_offset)
         
         # Display line of sight
         if self.hover and self.chosen_hex and self.show_los:
@@ -136,16 +150,6 @@ class HexMap(object):
         # Cell selection
         if self.chosen_hex:
             self.chosen_hex.update(colors.selection, x_offset=self.x_offset, y_offset=self.y_offset)
-
-        # Hover highlight
-        if self.hover and hasattr(self.hover.token, 'player'):
-            self.hover.update(self.hover.token.player.color,
-                              x_offset=self.x_offset, y_offset=self.y_offset)
-        elif self.hover and self.hover.token is not None:
-            self.hover.update(colors.rock_highlight,
-                              x_offset=self.x_offset, y_offset=self.y_offset)
-        elif self.hover:
-            self.hover.update(colors.highlight, x_offset=self.x_offset, y_offset=self.y_offset)
 
         # Selected cell hover highlight
         if self.hover is self.chosen_hex and self.hover:
@@ -300,6 +304,7 @@ class Hex(object):
         # Hex interactions
         self.token = None
         self.has_los = False
+        self.has_mv = False
 
     def update(self, color=None, x_offset=0, y_offset=0):
         if color:

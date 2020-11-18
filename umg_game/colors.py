@@ -17,7 +17,7 @@ lblue = rgb(0, 0, 240)
 blue = rgb(0, 0, 200)
 dblue = rgb(0, 0, 160)
 
-rock = gray = rgb(130, 130, 130)
+rock = gray = rgb(110, 110, 110)
 rock_highlight = lgray = rgb(170, 170, 170)
 background = black = rgb(0, 0, 0)
 white = rgb(255, 255, 255)

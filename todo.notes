@@ -1,0 +1,39 @@
+== UNTITLED MECH GAME ==
+
+
+-= Systems =-
+[ ] Logging
+[ ] Game state save
+[ ] Game initialization
+
+
+-= Gameplay =-
+[ ] Better turns
+[√] `unclick_mech`
+[ ] `click_mech`
+[ ] Implement `current_mode` (i.e.: 'targeting', 'movement')
+
+
+
+-= Graphics =-
+[√] Player flag
+
+-= Battles =-
+[!] Damage implementation
+    [ ] `has_acted` property for mech
+[ ] Healing implementation
+[ ] Add range
+[√] When targeting display whole range
+[ ] Delete `has_vis` param
+[√] When moving display whole range
+[ ] Figure out this `remaining_mv + 1` bullcrap
+
+
+-= Modules =-
+[ ] Add range
+[ ] Add support modules
+[ ] Add pasive modules
+
+
+
+python3 /opt/iceye/fops/dlImage.py 8196 0 1 0 LASTOPS1
