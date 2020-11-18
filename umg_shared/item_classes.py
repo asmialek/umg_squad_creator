@@ -78,6 +78,7 @@ class Mech:
         self.energy = 0
         self.current_hp = self.AM
         self.remaining_mv = self.MV
+        self.has_acted = False
         self.special = self.frame.special
         self.slots = self.frame.slots.copy()
         self.image = 'C:/Projects/umg_squad_creator/umg_shared/mech_images/resized/15310.png'
