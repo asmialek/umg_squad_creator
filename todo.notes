@@ -3,7 +3,14 @@
 
 -= Systems =-
 [ ] Logging
-[ ] Game state save
+[ ] Game state save and load
+    [ ] Game save
+        [!] Mech save
+        [!] Player save
+    [ ] Game load
+        [ ] Split `Game.run` between `init` and `load` 
+[ ] Player turn recognition
+[ ] Saving game on external server
 [ ] Game initialization
 
 
@@ -11,20 +18,24 @@
 [ ] Better turns
 [√] `unclick_mech`
 [ ] `click_mech`
-[ ] Implement `current_mode` (i.e.: 'targeting', 'movement')
+[√] Clicking between mechs
+[!] Implement `current_mode` (i.e.: 'targeting', 'movement')
+[ ] End/Beginning of turn events
 
 
 
 -= Graphics =-
 [√] Player flag
 
+
 -= Battles =-
-[!] Damage implementation
-    [ ] `has_acted` property for mech
+[ ] Attack implementation
+    [√] `has_acted` property for mech
+    [ ] Add range
+    [ ] Add blast templates
 [ ] Healing implementation
-[ ] Add range
 [√] When targeting display whole range
-[ ] Delete `has_vis` param
+[√] Delete `has_vis` param
 [√] When moving display whole range
 [ ] Figure out this `remaining_mv + 1` bullcrap
 

@@ -1,6 +1,7 @@
 import pygame
 import pygame_gui
 import pathlib
+import pickle
 import copy
 import time
 from umg_game import hexmap, hex_geometry, load_mechs
@@ -21,7 +22,7 @@ class Player(object):
 
 
 class Game(object):
-    def __init__(self, hexmap_object, player_list, window_size=(1000, 640)):
+    def __init__(self, hexmap_object, player_list, load_game=None, window_size=(1000, 640)):
         self.name = None
         self.hexmap_object = hexmap_object
 
@@ -29,7 +30,6 @@ class Game(object):
         self.player_list = player_list
         self.current_player = player_list[0]
         self.current_player_list = copy.copy(self.player_list)
-        
         self.turn = 0
 
         # Pygame initialization
@@ -57,6 +57,16 @@ class Game(object):
         # Gameplay interactions
         self.use_function = None
         self.mode = None
+        self.movement_range = []
+
+    def save_game(self):
+        saved_game = {}
+        with open('test.sav', 'wb') as f:
+            for player in self.player_list:
+                saved_game[player.name] = {}
+                for token in player.mech_list:
+                    saved_game[player.name][token.mech.name] = {'pos': (token.x, token.y), 'mech': token.mech}
+            pickle.dump(saved_game, f)
 
     def create_window(self, window_size):
         return pygame.display.set_mode(window_size)
@@ -133,8 +143,12 @@ class Game(object):
             self.change_mode(None)
 
     def show_movement_range(self, toggle):
+        self.movement_range = []
+
         if not self.hexmap_object.chosen_hex.token:
             self.change_mode(None)
+            return False
+        elif not hasattr(self.hexmap_object.chosen_hex.token, 'mech'):
             return False
         elif not self.hexmap_object.chosen_hex.token.mech:
             self.change_mode(None)
@@ -146,19 +160,23 @@ class Game(object):
                 if hex_geometry.cube_distance(self.hexmap_object.chosen_hex.cube_id, hex_cell.cube_id) > self.hexmap_object.chosen_hex.token.mech.remaining_mv:
                     continue
                 move_path = self.hexmap_object.astar_pathfinding(self.hexmap_object.chosen_hex, hex_cell)
-                print(len(move_path), self.hexmap_object.chosen_hex.token.mech.remaining_mv)
                 if len(move_path) - 1 <= self.hexmap_object.chosen_hex.token.mech.remaining_mv:
                     hex_cell.has_mv = bool(move_path)
+                    self.movement_range.append(hex_cell)
             print('time:', time.time() - old)
             self.change_mode('movement')
         else:
             for hex_cell in self.hexmap_object.hexmap:
                 hex_cell.has_mv = False
             self.change_mode(None)
+
         return True
 
 
     def move_token(self, start, end):
+        if end not in self.movement_range:
+            self.unclick_mech()
+            return False
         # check current mode
         if self.mode != 'movement':
             return False
@@ -186,14 +204,16 @@ class Game(object):
         self.hexmap_object.chosen_hex = None
 
     def new_turn(self):
-        self.current_player_list = copy.copy(self.player_list)
         for player in self.player_list:
             player.energy += player.energy_per_turn
-        self.turn += 1
+            for mech in player.mech_list:
+                mech.has_acted = False
 
-    def run(self):
-        self.time_delta = self.clock.tick(60)/1000.0
-        
+        self.current_player_list = copy.copy(self.player_list)
+        self.turn += 1
+        self.save_game()
+
+    def new_game(self):
         # Mech loading (temp)
         squad_path = pathlib.Path('./squads/alpha_squad.sqd')
         mech_list = load_mechs.load_mech_list(squad_path)
@@ -201,6 +221,22 @@ class Game(object):
         self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[48], mech_list[0], self.player_list[0]))
         self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[24], mech_list[1], self.player_list[0]))
         self.player_list[1].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[27], mech_list[2], self.player_list[1]))
+
+    def load_game(self, loaded_game):
+        # Mech loading (temp)
+        squad_path = pathlib.Path('./squads/alpha_squad.sqd')
+        mech_list = load_mechs.load_mech_list(squad_path)
+
+        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[48], mech_list[0], self.player_list[0]))
+        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[24], mech_list[1], self.player_list[0]))
+        self.player_list[1].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[27], mech_list[2], self.player_list[1]))
+
+        for player in self.player_list:
+            pass
+
+
+    def run(self):
+        self.time_delta = self.clock.tick(60)/1000.0
 
         for player in self.player_list:
             player.update_params()
@@ -242,7 +278,7 @@ class Game(object):
                     self.hexmap_object.hover = self.hexmap_object.check_position(x, y)
                 
                 # Mouse click
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     x, y = event.pos
                     clicked_hex = self.hexmap_object.check_position(x, y)
                     if clicked_hex:
@@ -261,37 +297,43 @@ class Game(object):
                                     self.show_movement_range(True)
                                 else:
                                     self.unclick_mech()
+                                    self.hexmap_object.chosen_hex = clicked_hex
                             # If not holding token, pick cliked hex
                             else:
                                 self.hexmap_object.chosen_hex = clicked_hex
                                 self.show_visibility(False)
                                 self.show_movement_range(True)
-                        # If mech is chosen and and mech is clicked
-                        elif clicked_hex.token and self.hexmap_object.chosen_hex:
-                            if self.hexmap_object.chosen_hex.token:
-                                if hasattr(clicked_hex.token, 'mech') and hasattr(self.hexmap_object.chosen_hex.token, 'mech'):
-                                    # If you have your mech and click on enemy
-                                    if self.hexmap_object.chosen_hex.token in self.current_player.mech_list and \
-                                       clicked_hex.token not in self.current_player.mech_list:
-                                        print('targeting!')
-                                        if self.use_function:
-                                            if not self.hexmap_object.chosen_hex.token.mech.has_acted:
-                                                self.use_function(self.hexmap_object.chosen_hex.token.mech, clicked_hex.token.mech)
-                                                self.hexmap_object.chosen_hex.token.mech.has_acted = True
-                                            else:
-                                                # TODO: something here
-                                                pass
-                                                # log
-                                            self.button_pressed(self.last_button)
+                        # targeting mode routines
+                        elif self.mode == 'targeting':
+                            # If mech is chosen and and mech is clicked
+                            if clicked_hex.token and self.hexmap_object.chosen_hex:
+                                if self.hexmap_object.chosen_hex.token:
+                                    if hasattr(clicked_hex.token, 'mech') and hasattr(self.hexmap_object.chosen_hex.token, 'mech'):
+                                        # If you have your mech and click on enemy
+                                        if self.hexmap_object.chosen_hex.token in self.current_player.mech_list and clicked_hex.token not in self.current_player.mech_list:
+                                            print('targeting!')
+                                            if self.use_function:
+                                                if not self.hexmap_object.chosen_hex.token.mech.has_acted:
+                                                    self.use_function(self.hexmap_object.chosen_hex.token.mech, clicked_hex.token.mech)
+                                                    self.hexmap_object.chosen_hex.token.mech.has_acted = True
+                                                    self.hexmap_object.chosen_hex.token.mech.remaining_mv = 0
+                                                else:
+                                                    # TODO: something here
+                                                    pass
+                                                    # log
+                                                self.button_pressed(self.last_button)
                         # If clicking on space with token, grab it
                         else:
+                            if self.hexmap_object.chosen_hex:
+                                self.unclick_mech()
                             self.hexmap_object.chosen_hex = clicked_hex
-                            self.show_visibility(False)
                             self.show_movement_range(True)
                         self.hexmap_object.chosen_old = self.hexmap_object.chosen_hex
                         print('Clicked:', clicked_hex.axial_id)
                     self.hexmap_object.hover = clicked_hex
-
+                # right mouse button
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                                    self.unclick_mech()
 
                 # Keyboard interaction
                 if event.type == pygame.KEYDOWN:
@@ -316,7 +358,7 @@ class Game(object):
                     if event.user_type == pygame_gui.UI_BUTTON_ON_UNHOVERED:
                         if event.ui_element == self.last_button:
                             self.last_button._set_active()
-                
+
                 self.ui_manager.process_events(event)
             #########################################################################
             ################## END OF EVENT LOGIC ###################################
@@ -394,9 +436,28 @@ def print_mech_data():
     pass
 
 
+def load_game(game_name):
+    try:
+        with open(f'{game_name}.sav', 'rb') as f:
+            loaded = pickle.load(f)
+        return loaded
+    except (FileNotFoundError, EOFError) as e:
+        print(e.__class__, e)
+        return None
+
 if __name__ == '__main__':
     first_player = Player('Brorys', (100, 100, 200))
     second_player = Player('Pitor', (200, 100, 100))
     game_player_list = [first_player, second_player]
     
-    Game(None, game_player_list).run()
+    loaded = load_game('test')
+    loaded = None
+    
+    game_object = Game(None, game_player_list)
+
+    if loaded:
+        game_object.load_game(loaded)
+    else:
+        game_object.new_game()
+    
+    game_object.run()
