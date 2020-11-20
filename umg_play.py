@@ -1,5 +1,6 @@
 import pygame
 import pygame_gui
+import traceback
 import pathlib
 import pickle
 import copy
@@ -27,9 +28,9 @@ class Game(object):
         self.hexmap_object = hexmap_object
 
         # Players and turns
-        self.player_list = player_list
-        self.current_player = player_list[0]
-        self.current_player_list = copy.copy(self.player_list)
+        self.player_list = []
+        self.current_player = None
+        self.current_player_list = []
         self.turn = 0
 
         # Pygame initialization
@@ -59,14 +60,46 @@ class Game(object):
         self.mode = None
         self.movement_range = []
 
+    def new_game(self, player_list):
+        # Mech loading (temp)
+        self.player_list = player_list
+        self.current_player = player_list[0]
+        self.current_player_list = copy.copy(self.player_list)
+        self.turn = 0
+
+        squad_path = pathlib.Path('./squads/alpha_squad.sqd')
+        mech_list = load_mechs.load_mech_list(squad_path)
+
+        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[48], mech_list[0], self.player_list[0]))
+        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[24], mech_list[1], self.player_list[0]))
+        self.player_list[1].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[27], mech_list[2], self.player_list[1]))
+
     def save_game(self):
         saved_game = {}
         with open('test.sav', 'wb') as f:
             for player in self.player_list:
                 saved_game[player.name] = {}
                 for token in player.mech_list:
-                    saved_game[player.name][token.mech.name] = {'pos': (token.x, token.y), 'mech': token.mech}
+                    saved_game[player.name][token.mech.name] = {'pos': token.hex_cell.axial_id, 'mech': token.mech}
             pickle.dump(saved_game, f)
+
+    def load_game(self, loaded_game):
+        # Mech loading (temp)
+        print('-- loading game --')
+        player_colors = [(100, 100, 200),
+                         (200, 100, 100)]
+
+        for i, player in enumerate(loaded_game):
+            player_object = Player(player, player_colors[i])
+            self.player_list.append(player_object)
+            for mech_name in loaded_game[player]:
+                mech_dict = loaded_game[player][mech_name]
+                hex_cell = self.hexmap_object.get_tile_from_axial(mech_dict['pos'])
+                player_object.mech_list.append(hexmap.Token(self.screen, hex_cell, mech_dict['mech'], player_object))
+
+        self.current_player = self.player_list[0]
+        self.current_player_list = copy.copy(self.player_list)
+        self.turn = 0
 
     def create_window(self, window_size):
         return pygame.display.set_mode(window_size)
@@ -145,7 +178,10 @@ class Game(object):
     def show_movement_range(self, toggle):
         self.movement_range = []
 
-        if not self.hexmap_object.chosen_hex.token:
+        if not self.hexmap_object.chosen_hex:
+            self.change_mode(None)
+            return False
+        elif not self.hexmap_object.chosen_hex.token:
             self.change_mode(None)
             return False
         elif not hasattr(self.hexmap_object.chosen_hex.token, 'mech'):
@@ -203,37 +239,16 @@ class Game(object):
         self.button_pressed(None)
         self.hexmap_object.chosen_hex = None
 
-    def new_turn(self):
+    def next_round(self):
         for player in self.player_list:
             player.energy += player.energy_per_turn
-            for mech in player.mech_list:
-                mech.has_acted = False
+            for token in player.mech_list:
+                token.mech.has_acted = False
+                token.mech.remaining_mv = token.mech.MV
 
         self.current_player_list = copy.copy(self.player_list)
         self.turn += 1
         self.save_game()
-
-    def new_game(self):
-        # Mech loading (temp)
-        squad_path = pathlib.Path('./squads/alpha_squad.sqd')
-        mech_list = load_mechs.load_mech_list(squad_path)
-
-        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[48], mech_list[0], self.player_list[0]))
-        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[24], mech_list[1], self.player_list[0]))
-        self.player_list[1].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[27], mech_list[2], self.player_list[1]))
-
-    def load_game(self, loaded_game):
-        # Mech loading (temp)
-        squad_path = pathlib.Path('./squads/alpha_squad.sqd')
-        mech_list = load_mechs.load_mech_list(squad_path)
-
-        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[48], mech_list[0], self.player_list[0]))
-        self.player_list[0].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[24], mech_list[1], self.player_list[0]))
-        self.player_list[1].mech_list.append(hexmap.Token(self.screen, self.hexmap_object.hexmap[27], mech_list[2], self.player_list[1]))
-
-        for player in self.player_list:
-            pass
-
 
     def run(self):
         self.time_delta = self.clock.tick(60)/1000.0
@@ -251,7 +266,7 @@ class Game(object):
         for coords in rock_range:
             if not self.hexmap_object.get_tile_from_axial(hex_geometry.Axial(*coords)).token:
                 hexmap.Rock(self.screen, self.hexmap_object.get_tile_from_axial(hex_geometry.Axial(*coords)))
-                print(f'Putting Rocks at {coords}.')
+                # print(f'Putting Rocks at {coords}.')
             else:
                 print(f'Putting Rocks failed: {coords} is already taken.')
 
@@ -342,9 +357,10 @@ class Game(object):
                         pass
                     # Press Space to pass turn between players
                     if event.key == pygame.K_SPACE:
+                        self.unclick_mech()
                         self.current_player = self.current_player_list.pop()
                         if not self.current_player_list:
-                            self.new_turn()
+                            self.next_round()
                     # Show line of sight
                     if event.key == pygame.K_a:
                         self.hexmap_object.show_los = not self.hexmap_object.show_los
@@ -451,13 +467,20 @@ if __name__ == '__main__':
     game_player_list = [first_player, second_player]
     
     loaded = load_game('test')
-    loaded = None
+    # loaded = None
     
     game_object = Game(None, game_player_list)
 
     if loaded:
-        game_object.load_game(loaded)
+        try:
+            game_object.load_game(loaded)
+            print('-- loading successful -- ')
+        except Exception as e:
+            tb1 = traceback.TracebackException.from_exception(e)
+            print(''.join(tb1.format()))
+            print('-- LOADING FAILED -- ')
+            game_object.new_game(game_player_list)
     else:
-        game_object.new_game()
+        game_object.new_game(game_player_list)
     
     game_object.run()

@@ -6,9 +6,15 @@
 [ ] Game state save and load
     [ ] Game save
         [!] Mech save
+            [√] Mech position save
+            [√] Mech object save
+            [ ] Any other parameters
         [!] Player save
+            [√] Player name
+            [ ] Player color
+            [ ] Player stats (energy, pts)
     [ ] Game load
-        [ ] Split `Game.run` between `init` and `load` 
+        [!] Split `Game.run` between `init` and `load`
 [ ] Player turn recognition
 [ ] Saving game on external server
 [ ] Game initialization
@@ -16,6 +22,10 @@
 
 -= Gameplay =-
 [ ] Better turns
+    [√] `unclick_mech` on turn pass
+    [ ] Round vs Turn
+        [ ] Implement `end_round`
+    [ ] Player lock
 [√] `unclick_mech`
 [ ] `click_mech`
 [√] Clicking between mechs
@@ -47,4 +57,10 @@
 
 
 
-python3 /opt/iceye/fops/dlImage.py 8196 0 1 0 LASTOPS1
+- SAVED GAME STRUCTURE
+
+loaded_game
+- player name
+    - mech name
+        - pos = x, y
+        - mech = mech_object
