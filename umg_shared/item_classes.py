@@ -49,18 +49,15 @@ class Module:
 
 class Weapon(Module):
     def use(self, user, target):
-            # print(user)
-            # print(target)
+        if not user.spend_energy(self.EC):
+            return False
 
-            if not user.spend_energy(self.EC):
-                return False
+        if not target.receive_damage(self.DM):
+            return False
 
-            if not target.receive_damage(self.DM):
-                return False
-
-            log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')
-            
-            return True
+        log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')
+        
+        return True
 
 
 # TODO: Add player class and set if for Mech objects

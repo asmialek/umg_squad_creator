@@ -77,29 +77,41 @@ class Game(object):
     def save_game(self):
         saved_game = {}
         with open('test.sav', 'wb') as f:
+            saved_game = {'turn': self.turn,
+                          'players': {}
+                         } 
             for player in self.player_list:
-                saved_game[player.name] = {}
+                player_dict = {'color': player.color,
+                               'energy': player.energy,
+                               'mechs': {}
+                               }
                 for token in player.mech_list:
-                    saved_game[player.name][token.mech.name] = {'pos': token.hex_cell.axial_id, 'mech': token.mech}
+                    mech_dict = {'pos': token.hex_cell.axial_id,
+                                 'mech': token.mech
+                                 }
+                    player_dict['mechs'][token.mech.name] = mech_dict
+                saved_game['players'][player.name] = player_dict
             pickle.dump(saved_game, f)
 
     def load_game(self, loaded_game):
         # Mech loading (temp)
         print('-- loading game --')
-        player_colors = [(100, 100, 200),
-                         (200, 100, 100)]
+        # player_colors = [(100, 100, 200),
+                        #  (200, 100, 100)]
+        self.turn = loaded_game['turn']
+        players_dict = loaded_game['players']
 
-        for i, player in enumerate(loaded_game):
-            player_object = Player(player, player_colors[i])
+        for player in players_dict:
+            player_object = Player(player, players_dict[player]['color'])
+            player_object.energy = players_dict[player]['energy']
             self.player_list.append(player_object)
-            for mech_name in loaded_game[player]:
-                mech_dict = loaded_game[player][mech_name]
+            for mech_name in loaded_game['players'][player]['mechs']:
+                mech_dict = loaded_game['players'][player]['mechs'][mech_name]
                 hex_cell = self.hexmap_object.get_tile_from_axial(mech_dict['pos'])
                 player_object.mech_list.append(hexmap.Token(self.screen, hex_cell, mech_dict['mech'], player_object))
 
         self.current_player = self.player_list[0]
         self.current_player_list = copy.copy(self.player_list)
-        self.turn = 0
 
     def create_window(self, window_size):
         return pygame.display.set_mode(window_size)
@@ -118,12 +130,11 @@ class Game(object):
                 for slot in token.mech.slots:
                     item_slot = token.mech.slots[slot]
                     if item_slot:
-                        self.button_dict[player][token][slot] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((680, 220+i*36),
-                                                                                             (200, 30)),
-                                                                                             text=item_slot.name,
-                                                                                             manager=self.ui_manager,
-                                                                                             tool_tip_text=item_slot.create_tooltip(),
-                                                                                             visible=0)
+                        self.button_dict[player][token][slot] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((680, 220+i*36), (200, 30)),
+                         text=item_slot.name,
+                         manager=self.ui_manager,
+                         tool_tip_text=item_slot.create_tooltip(),
+                         visible=0)
                         self.button_list.append(self.button_dict[player][token][slot])
                         i += 1
                         
@@ -465,10 +476,9 @@ if __name__ == '__main__':
     first_player = Player('Brorys', (100, 100, 200))
     second_player = Player('Pitor', (200, 100, 100))
     game_player_list = [first_player, second_player]
-    
+
     loaded = load_game('test')
-    # loaded = None
-    
+
     game_object = Game(None, game_player_list)
 
     if loaded:
@@ -482,5 +492,5 @@ if __name__ == '__main__':
             game_object.new_game(game_player_list)
     else:
         game_object.new_game(game_player_list)
-    
+
     game_object.run()
