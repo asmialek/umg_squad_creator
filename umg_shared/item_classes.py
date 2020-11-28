@@ -1,3 +1,4 @@
+from umg_game import hex_geometry
 from umg_shared import umg_logging
 
 
@@ -48,20 +49,25 @@ class Module:
 
 
 class Weapon(Module):
+    # def define(self):
+    #     self.require_los = True
+
     def use(self, user, target):
-            # print(user)
-            # print(target)
+        if not user.spend_energy(self.EC):
+            return False
 
-            if not user.spend_energy(self.EC):
-                return False
+        if not target.receive_damage(self.DM):
+            return False
 
-            if not target.receive_damage(self.DM):
-                return False
+        log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')
+        
+        return True
 
-            log(f'{user.name} is attacking {target.name} with {self.name}! Cost: {self.EC}, damage: {self.DM}.')
-            
-            return True
-
+    def check_range(self, user, target, hexmap):
+        if target:
+            check, path = hexmap.check_line_of_sight(user, target)
+            if len(path) <= self.check_range:
+                pass
 
 # TODO: Add player class and set if for Mech objects
 

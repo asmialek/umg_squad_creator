@@ -3,18 +3,18 @@
 
 -= Systems =-
 [ ] Logging
-[ ] Game state save and load
-    [ ] Game save
-        [!] Mech save
+[√] Game state save and load
+    [√] Game save
+        [√] Mech save
             [√] Mech position save
             [√] Mech object save
-            [ ] Any other parameters
-        [!] Player save
+            [x] Any other parameters
+        [√] Player save
             [√] Player name
-            [ ] Player color
-            [ ] Player stats (energy, pts)
-    [ ] Game load
-        [!] Split `Game.run` between `init` and `load`
+            [√] Player color
+            [√] Player stats (energy, pts)
+    [√] Game load
+        [√] Split `Game.run` between `init` and `load`
 [ ] Player turn recognition
 [ ] Saving game on external server
 [ ] Game initialization
@@ -33,15 +33,16 @@
 [ ] End/Beginning of turn events
 
 
-
 -= Graphics =-
 [√] Player flag
-
+[ ] Animations
 
 -= Battles =-
 [ ] Attack implementation
     [√] `has_acted` property for mech
     [ ] Add range
+        [!] Normal ranges
+        [ ] X-ranges
     [ ] Add blast templates
 [ ] Healing implementation
 [√] When targeting display whole range
@@ -57,10 +58,14 @@
 
 
 
-- SAVED GAME STRUCTURE
-
+- SAVED GAME STRUCTURE: 
 loaded_game
-- player name
-    - mech name
-        - pos = x, y
-        - mech = mech_object
+- turn
+- players
+    - player name
+        - color = (r,g,b)
+        - energy = int
+        - mechs
+            - mech name
+                - pos = x, y
+                - mech = mech_object
