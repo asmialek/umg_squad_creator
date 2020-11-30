@@ -52,7 +52,13 @@ class Weapon(Module):
     # def define(self):
     #     self.require_los = True
 
-    def use(self, user, target):
+    def use(self, user_tile, target_tile, hexmap):
+        user = user_tile.token.mech
+        target = target_tile.token.mech
+
+        if not self.check_range(user_tile, target_tile, hexmap):
+            pass
+
         if not user.spend_energy(self.EC):
             return False
 
@@ -66,8 +72,16 @@ class Weapon(Module):
     def check_range(self, user, target, hexmap):
         if target:
             check, path = hexmap.check_line_of_sight(user, target)
-            if len(path) <= self.check_range:
-                pass
+            if check:
+                if len(path[1:]) <= self.RG:
+                    print('> good', path)
+                    return True
+                else:
+                    print('> not in range', path)
+                    return False
+            else:
+                print('> not in los', path)
+                return False
 
 # TODO: Add player class and set if for Mech objects
 

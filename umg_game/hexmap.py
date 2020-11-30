@@ -135,6 +135,7 @@ class HexMap(object):
         if self.hover and self.chosen_hex and self.show_los:
             _, los_path = self.check_line_of_sight(self.chosen_hex, self.hover)
             _ = [tile.update(colors.dred, x_offset=self.x_offset, y_offset=self.y_offset) for tile in los_path]
+            
         # Display pathfinding
         elif self.hover and self.chosen_hex:
             if self.chosen_hex.token:
@@ -236,6 +237,19 @@ class HexMap(object):
 
         return ret
 
+    def get_radius(self, hex_tiles, radius):
+        radius_set = set()
+
+        if radius > 1:
+            hex_tiles = self.get_radius(hex_tiles, radius-1)
+
+        if type(hex_tiles) is not list:
+            hex_tiles = [hex_tiles]
+
+        for tile in hex_tiles:
+            radius_set.update(self.get_neighbours(tile))
+
+        return list(radius_set)
 
     def astar_pathfinding(self, start, goal):
         frontier = queue.PriorityQueue()

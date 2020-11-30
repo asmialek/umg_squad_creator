@@ -30,6 +30,7 @@
 [ ] `click_mech`
 [√] Clicking between mechs
 [!] Implement `current_mode` (i.e.: 'targeting', 'movement')
+    [!] Debug the movement after button unclick 
 [ ] End/Beginning of turn events
 
 
@@ -43,7 +44,8 @@
     [ ] Add range
         [!] Normal ranges
         [ ] X-ranges
-    [ ] Add blast templates
+    [!] Add blast templates
+        [√] Add `get_radius` to `hexmap`
 [ ] Healing implementation
 [√] When targeting display whole range
 [√] Delete `has_vis` param

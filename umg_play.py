@@ -59,6 +59,7 @@ class Game(object):
         self.use_function = None
         self.mode = None
         self.movement_range = []
+        self.selected_slot = None
 
     def new_game(self, player_list):
         # Mech loading (temp)
@@ -79,7 +80,7 @@ class Game(object):
         with open('test.sav', 'wb') as f:
             saved_game = {'turn': self.turn,
                           'players': {}
-                         } 
+                         }
             for player in self.player_list:
                 player_dict = {'color': player.color,
                                'energy': player.energy,
@@ -130,14 +131,15 @@ class Game(object):
                 for slot in token.mech.slots:
                     item_slot = token.mech.slots[slot]
                     if item_slot:
-                        self.button_dict[player][token][slot] = pygame_gui.elements.UIButton(relative_rect=pygame.Rect((680, 220+i*36), (200, 30)),
-                         text=item_slot.name,
-                         manager=self.ui_manager,
-                         tool_tip_text=item_slot.create_tooltip(),
-                         visible=0)
+                        self.button_dict[player][token][slot] = pygame_gui.elements.\
+                        UIButton(relative_rect=pygame.Rect((680, 220+i*36), (200, 30)),
+                                 text=item_slot.name,
+                                 manager=self.ui_manager,
+                                 tool_tip_text=item_slot.create_tooltip(),
+                                 visible=0)
                         self.button_list.append(self.button_dict[player][token][slot])
                         i += 1
-                        
+
     def button_pressed(self, button):
         if self.last_button:
             # Unpress the old button
@@ -148,7 +150,8 @@ class Game(object):
                 self.last_button = None
                 self.hexmap_object.show_los = False
                 self.show_visibility(False)
-                self.use_function = None
+                self.selected_slot = None
+                # self.use_function = None
                 return
 
         if button:
@@ -160,11 +163,11 @@ class Game(object):
                 for token in self.button_dict[player]:
                     for slot in self.button_dict[player][token]:
                         if button == self.button_dict[player][token][slot]:
-                            item_slot = token.mech.slots[slot]
+                            self.selected_slot = token.mech.slots[slot]
                             # here should go the entire logic behind ranges and targeting
                             self.hexmap_object.show_los = True
-                            self.show_visibility(True)
-                            self.use_function = item_slot.use
+                            self.show_visibility(True, self.selected_slot.RG)
+                            # self.use_function = self.selected_slot.use
 
         self.last_button = button
         return
@@ -174,12 +177,17 @@ class Game(object):
             self.mode = mode
         print('mode:', self.mode)
 
-    def show_visibility(self, toggle):
+    def show_visibility(self, toggle, los_range=None):
         if toggle and self.hexmap_object.chosen_hex:
             for hex_cell in self.hexmap_object.hexmap:
-                has_los, _ = self.hexmap_object.check_line_of_sight(hex_cell,
-                                                                self.hexmap_object.chosen_hex)
-                hex_cell.has_los = has_los
+                has_los, path = self.hexmap_object.check_line_of_sight(hex_cell, self.hexmap_object.chosen_hex)
+                if los_range:
+                    if len(path[1:]) <= los_range:
+                        hex_cell.has_los = has_los
+                    else:
+                        hex_cell.has_los = False
+                else:
+                    hex_cell.has_los = True
             self.change_mode('targeting')
         else:
             for hex_cell in self.hexmap_object.hexmap:
@@ -200,7 +208,7 @@ class Game(object):
         elif not self.hexmap_object.chosen_hex.token.mech:
             self.change_mode(None)
             return False
-        
+
         if toggle and self.hexmap_object.chosen_hex:
             old = time.time()
             for hex_cell in self.hexmap_object.hexmap:
@@ -271,8 +279,8 @@ class Game(object):
 
         # Rock placing
         rock_range = [(0, 0), (0, 1), (2, 1), (3, -3), (-3, -1), (-1, -3),
-                    (-4, 3), (-4, 3), (-4, 4), (-3, 4), (-2, 4), (-2, 5),
-                    (4, -2), (0, -4), (3, 1), (2, 2), (2, 3), (-1, 2), (-2, 4)]
+                      (-4, 3), (-4, 3), (-4, 4), (-3, 4), (-2, 4), (-2, 5),
+                      (4, -2), (0, -4), (3, 1), (2, 2), (2, 3), (-1, 2), (-2, 4)]
 
         for coords in rock_range:
             if not self.hexmap_object.get_tile_from_axial(hex_geometry.Axial(*coords)).token:
@@ -282,7 +290,7 @@ class Game(object):
                 print(f'Putting Rocks failed: {coords} is already taken.')
 
         pygame.display.flip() # paint screen one time
-                
+
         running = True
         hover_text = ''
         while running:
@@ -297,16 +305,17 @@ class Game(object):
                 # Quit the game if event is "quit"
                 if event.type == pygame.QUIT:
                     running = False
-                
+
                 # Mouse hover highlight
                 if event.type == pygame.MOUSEMOTION:
                     x, y = event.pos
                     self.hexmap_object.hover = self.hexmap_object.check_position(x, y)
-                
-                # Mouse click
+
+                # Left mouse click
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     x, y = event.pos
                     clicked_hex = self.hexmap_object.check_position(x, y)
+                    # self.hexmap_object.get_radius(clicked_hex, 3)
                     if clicked_hex:
                         # If clicked hex_cell is already chosen, unclick it
                         if clicked_hex == self.hexmap_object.chosen_hex:
@@ -329,7 +338,7 @@ class Game(object):
                                 self.hexmap_object.chosen_hex = clicked_hex
                                 self.show_visibility(False)
                                 self.show_movement_range(True)
-                        # targeting mode routines
+                        # Targeting mode routines
                         elif self.mode == 'targeting':
                             # If mech is chosen and and mech is clicked
                             if clicked_hex.token and self.hexmap_object.chosen_hex:
@@ -338,9 +347,9 @@ class Game(object):
                                         # If you have your mech and click on enemy
                                         if self.hexmap_object.chosen_hex.token in self.current_player.mech_list and clicked_hex.token not in self.current_player.mech_list:
                                             print('targeting!')
-                                            if self.use_function:
+                                            if self.selected_slot:
                                                 if not self.hexmap_object.chosen_hex.token.mech.has_acted:
-                                                    self.use_function(self.hexmap_object.chosen_hex.token.mech, clicked_hex.token.mech)
+                                                    self.selected_slot.use(self.hexmap_object.chosen_hex, clicked_hex, self.hexmap_object)
                                                     self.hexmap_object.chosen_hex.token.mech.has_acted = True
                                                     self.hexmap_object.chosen_hex.token.mech.remaining_mv = 0
                                                 else:
@@ -357,9 +366,10 @@ class Game(object):
                         self.hexmap_object.chosen_old = self.hexmap_object.chosen_hex
                         print('Clicked:', clicked_hex.axial_id)
                     self.hexmap_object.hover = clicked_hex
-                # right mouse button
+
+                # Right mouse button
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-                                    self.unclick_mech()
+                    self.unclick_mech()
 
                 # Keyboard interaction
                 if event.type == pygame.KEYDOWN:
@@ -466,8 +476,8 @@ def print_mech_data():
 def load_game(game_name):
     try:
         with open(f'{game_name}.sav', 'rb') as f:
-            loaded = pickle.load(f)
-        return loaded
+            loaded_game = pickle.load(f)
+        return loaded_game
     except (FileNotFoundError, EOFError) as e:
         print(e.__class__, e)
         return None
