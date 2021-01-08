@@ -120,6 +120,8 @@ class HexMap(object):
             if hex_cell.token:
                 if hex_cell.token.name == 'Rock':
                     hex_cell.update(colors.rock, x_offset=self.x_offset, y_offset=self.y_offset)
+
+        print('hexmap update')
                     
         # Hover highlight
         if self.hover and hasattr(self.hover.token, 'player'):
@@ -183,7 +185,7 @@ class HexMap(object):
                                                           .collidepoint(x, y):
                         if clicked_hex.mask.get_at((x-clicked_hex.x-self.x_offset,
                                                     y-clicked_hex.y-self.y_offset)):
-                            # print('clicked on mask', clicked_hex.axial_id)
+                            # Returns a Hex type object
                             return clicked_hex
             except IndexError:
                 pass

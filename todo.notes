@@ -36,7 +36,9 @@
 
 -= Graphics =-
 [√] Player flag
-[ ] Animations
+[!] Animations
+    [!] Animations class
+    [ ] Pre-loading animations
 
 -= Battles =-
 [ ] Attack implementation

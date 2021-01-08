@@ -5,9 +5,43 @@ import pathlib
 import pickle
 import copy
 import time
+import os
 from umg_game import hexmap, hex_geometry, load_mechs
 from umg_shared import umg_logging
 
+
+
+class Animation(object):
+    def __init__(self, screen, animation_list, dirpath, location, speed_factor=1, indefinite=False):
+        self.location = location
+        self.screen = screen
+        self.animation_list = animation_list
+
+        self.frame_list = []
+        for filename in os.listdir(dirpath):
+            if filename[-3:] == 'png':
+                self.frame_list.append(pygame.image.load(dirpath+'\\'+filename))
+        self.last_frame = len(self.frame_list)
+        self.speed_count = 0
+        self.speed_factor = speed_factor
+        self.frame_no = 0
+        
+        self.indefinite = indefinite
+
+        self.animation_list.append(self)
+        self.screen.blit(self.frame_list[self.frame_no], self.location)
+
+    def update(self):
+        self.speed_count += 1
+        if self.speed_count == self.speed_factor:
+            self.frame_no += 1
+            if not self.indefinite and self.frame_no == self.last_frame:
+                self.animation_list.remove(self)
+                return
+            self.speed_count = 0
+        self.screen.blit(self.frame_list[self.frame_no], self.location)
+        print('anim update')
+        return
 
 class Player(object):
     def __init__(self, name, color=(100, 100, 200)):
@@ -60,6 +94,9 @@ class Game(object):
         self.mode = None
         self.movement_range = []
         self.selected_slot = None
+
+        # Animations
+        self.animation_list = []
 
     def new_game(self, player_list):
         # Mech loading (temp)
@@ -270,7 +307,9 @@ class Game(object):
         self.save_game()
 
     def run(self):
-        self.time_delta = self.clock.tick(60)/1000.0
+        print('>> cwd:', os.getcwd())
+
+        self.time_delta = self.clock.tick(40)/1000.0
 
         for player in self.player_list:
             player.update_params()
@@ -317,6 +356,17 @@ class Game(object):
                     clicked_hex = self.hexmap_object.check_position(x, y)
                     # self.hexmap_object.get_radius(clicked_hex, 3)
                     if clicked_hex:
+                                                                    
+                        #####################
+                        # JUST TESTING HERE #
+                        #####################
+                        Animation(screen=self.screen,
+                                    animation_list=self.animation_list,
+                                    dirpath='.\\umg_shared\\explosion_animation\\resized',
+                                    location=(clicked_hex.x, clicked_hex.y),
+                                    speed_factor=3,
+                                    indefinite=False)
+
                         # If clicked hex_cell is already chosen, unclick it
                         if clicked_hex == self.hexmap_object.chosen_hex:
                             self.unclick_mech()
@@ -439,6 +489,10 @@ class Game(object):
 
             # Hexmap update
             self.hexmap_object.update()
+
+            # Animations
+            for animation in self.animation_list:
+                animation.update()
 
             # Text display
             for i, line in enumerate(hover_text.splitlines()):
